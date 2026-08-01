@@ -10,6 +10,7 @@ const familyId = 'family-a';
 const outsiderFamilyId = 'family-b';
 const profileId = 'profile-a';
 const personId = 'person-a';
+const memoryId = 'memory-a';
 let testEnvironment;
 
 function personData() {
@@ -21,6 +22,24 @@ function personData() {
     birthday: '2015-04-12',
     notes: 'Met through school.',
     tags: ['Friend', 'School'],
+    photoUrl: null,
+    photoPath: null,
+    archivedAt: null,
+    createdBy: ownerId,
+    schemaVersion: 1,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  };
+}
+
+function memoryData() {
+  return {
+    familyId,
+    profileId,
+    title: 'The science fair',
+    story: 'Built a solar system together.',
+    occurredOn: '2026-05-20',
+    personIds: [personId],
     photoUrl: null,
     photoPath: null,
     archivedAt: null,
@@ -143,4 +162,48 @@ test('photo storage accepts family images and denies invalid or cross-family acc
   await assertFails(outsiderStorage.ref(photoRef.fullPath).getMetadata());
   await assertFails(outsiderStorage.ref(`families/${familyId}/people/${personId}/intruder.jpg`)
     .putString('intruder photo', 'raw', { contentType: 'image/jpeg' }));
+});
+
+test('owner can create, read, edit, archive, and restore a profile memory', async () => {
+  const db = testEnvironment.authenticatedContext(ownerId, {
+    email: 'owner-a@example.com', email_verified: true,
+  }).firestore();
+  const memoryRef = doc(db, 'families', familyId, 'memories', memoryId);
+
+  await assertSucceeds(setDoc(memoryRef, memoryData()));
+  await assertSucceeds(getDoc(memoryRef));
+  await assertSucceeds(updateDoc(memoryRef, {
+    title: 'Our science fair',
+    archivedAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  }));
+  await assertSucceeds(updateDoc(memoryRef, { archivedAt: null, updatedAt: serverTimestamp() }));
+  await assertFails(updateDoc(memoryRef, { profileId: 'another-profile', updatedAt: serverTimestamp() }));
+  await assertFails(deleteDoc(memoryRef));
+});
+
+test('memory records and images deny invalid or cross-family access', async () => {
+  const ownerContext = testEnvironment.authenticatedContext(ownerId, {
+    email: 'owner-a@example.com', email_verified: true,
+  });
+  const ownerDb = ownerContext.firestore();
+  await assertSucceeds(setDoc(doc(ownerDb, 'families', familyId, 'memories', memoryId), memoryData()));
+  await assertFails(setDoc(doc(ownerDb, 'families', familyId, 'memories', 'missing-profile'), {
+    ...memoryData(),
+    profileId: 'missing-profile',
+  }));
+
+  const ownerStorage = ownerContext.storage('gs://lifebook-31782.firebasestorage.app');
+  const imageRef = ownerStorage.ref(`families/${familyId}/memories/${memoryId}/cover.jpg`);
+  await assertSucceeds(imageRef.putString('private memory image', 'raw', { contentType: 'image/jpeg' }));
+  await assertSucceeds(imageRef.getMetadata());
+  await assertFails(ownerStorage.ref(`families/${familyId}/memories/${memoryId}/notes.txt`)
+    .putString('not an image', 'raw', { contentType: 'text/plain' }));
+
+  const outsiderContext = testEnvironment.authenticatedContext(outsiderId, {
+    email: 'owner-b@example.com', email_verified: true,
+  });
+  await assertFails(getDoc(doc(outsiderContext.firestore(), 'families', familyId, 'memories', memoryId)));
+  await assertFails(outsiderContext.storage('gs://lifebook-31782.firebasestorage.app')
+    .ref(imageRef.fullPath).getMetadata());
 });

@@ -27,6 +27,14 @@ service firebase.storage {
       allow delete: if isFamilyManager(familyId);
     }
 
+    match /families/{familyId}/memories/{memoryId}/{fileName} {
+      allow read: if isFamilyMember(familyId);
+      allow create, update: if isFamilyManager(familyId)
+        && request.resource.size < 8 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow delete: if isFamilyManager(familyId);
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }

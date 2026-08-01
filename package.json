@@ -48,6 +48,7 @@
     "vercel-build": "expo export --platform web",
     "test:e2e:phase1": "node scripts/phase1-browser-smoke.mjs",
     "test:rules:people": "firebase emulators:exec --only firestore,storage \"node --test tests/firestore.people.rules.test.mjs\"",
+    "test:rules": "firebase emulators:exec --only firestore,storage \"node --test tests/firestore.people.rules.test.mjs\"",
     "lint": "expo lint"
   },
   "private": true

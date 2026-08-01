@@ -7,7 +7,7 @@ import { AppColors } from '@/constants/theme';
 import { AuthProvider, useAuthSession } from '@/providers/auth-provider';
 
 const publicRoutes = new Set(['index', 'sign-in', 'consent', 'create-account']);
-const protectedDetailRoutes = new Set(['person', 'edit-person', 'manage-relationship']);
+const protectedDetailRoutes = new Set(['person', 'edit-person', 'manage-relationship', 'memory', 'edit-memory']);
 
 function AppNavigator() {
   const router = useRouter();
@@ -86,6 +86,8 @@ function AppNavigator() {
         <Stack.Screen name="person" />
         <Stack.Screen name="edit-person" />
         <Stack.Screen name="manage-relationship" />
+        <Stack.Screen name="memory" />
+        <Stack.Screen name="edit-memory" />
       </Stack>
     </>
   );

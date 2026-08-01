@@ -1,15 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/avatar';
 import { SectionHeader } from '@/components/section-header';
 import { AppColors, FontFamily, MaxContentWidth, Radius, Shadow, Spacing } from '@/constants/theme';
-import { people } from '@/data/demo';
 import { useAuthSession } from '@/providers/auth-provider';
 import { signOutParent } from '@/services/auth';
 import { getFamilySummary, type FamilySummary } from '@/services/family';
+import { memoryDateLabel, subscribeToMemories, type MemoryRecord } from '@/services/memories';
+import { personInitials, subscribeToPeople, type PersonRecord } from '@/services/people';
 
 function QuickCard({
   icon,
@@ -17,17 +19,20 @@ function QuickCard({
   value,
   color,
   backgroundColor,
+  onPress,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   value: string;
   color: string;
   backgroundColor: string;
+  onPress: () => void;
 }) {
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${label}, ${value}`}
+      onPress={onPress}
       style={({ pressed }) => [styles.quickCard, { backgroundColor }, pressed && styles.pressed]}>
       <View style={[styles.quickIcon, { backgroundColor: AppColors.paper }]}>
         <Ionicons name={icon} size={19} color={color} />
@@ -39,8 +44,11 @@ function QuickCard({
 }
 
 export default function HomeScreen() {
+  const router = useRouter();
   const { user, setup } = useAuthSession();
   const [summary, setSummary] = useState<FamilySummary | null>(null);
+  const [people, setPeople] = useState<PersonRecord[]>([]);
+  const [memories, setMemories] = useState<MemoryRecord[]>([]);
   const profileName = summary?.profileName || 'Your family';
   const accountInitials = (user?.displayName || user?.email || 'Parent')
     .split(/[\s@]+/)
@@ -73,6 +81,32 @@ export default function HomeScreen() {
       active = false;
     };
   }, [setup]);
+
+  useEffect(() => {
+    if (!setup?.familyId || !setup.activeProfileId) {
+      return;
+    }
+    const ignoreError = () => undefined;
+    const unsubscribePeople = subscribeToPeople(setup.familyId, setPeople, ignoreError);
+    const unsubscribeMemories = subscribeToMemories(setup.familyId, setup.activeProfileId, setMemories, ignoreError);
+    return () => {
+      unsubscribePeople();
+      unsubscribeMemories();
+    };
+  }, [setup?.activeProfileId, setup?.familyId]);
+
+  const activePeople = useMemo(() => people.filter((person) => !person.archivedAt), [people]);
+  const activeMemories = useMemo(() => memories.filter((memory) => !memory.archivedAt), [memories]);
+  const latestMemory = activeMemories[0] || null;
+  const latestPeople = useMemo(() => {
+    if (!latestMemory) {
+      return [];
+    }
+    const peopleById = new Map(people.map((person) => [person.id, person]));
+    return latestMemory.personIds
+      .map((personId) => peopleById.get(personId))
+      .filter((person): person is PersonRecord => Boolean(person));
+  }, [latestMemory, people]);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -109,22 +143,25 @@ export default function HomeScreen() {
             </View>
             <Text style={styles.storyEyebrow}>{profileName.toUpperCase()}’S LIFEBOOK</Text>
           </View>
-          <Text style={styles.storyTitle}>128 people are part of his story.</Text>
+          <Text style={styles.storyTitle}>{activePeople.length} {activePeople.length === 1 ? 'person is' : 'people are'} part of this story.</Text>
           <Text style={styles.storyBody}>A growing collection of friends, family, and the moments they share.</Text>
           <View style={styles.storyFooter}>
             <View style={styles.avatarStack}>
-              {people.slice(0, 3).map((person, index) => (
+              {activePeople.slice(0, 3).map((person, index) => (
                 <View key={person.id} style={[styles.stackedAvatar, { marginLeft: index === 0 ? 0 : -9 }]}>
-                  <Avatar initials={person.initials} color={person.color} size={34} />
+                  <Avatar initials={personInitials(person)} imageUri={person.photoUrl} color={AppColors.sky} size={34} />
                 </View>
               ))}
-              <View style={[styles.avatarCount, { marginLeft: -9 }]}>
-                <Text style={styles.avatarCountText}>+125</Text>
-              </View>
+              {activePeople.length > 3 ? (
+                <View style={[styles.avatarCount, { marginLeft: -9 }]}>
+                  <Text style={styles.avatarCountText}>+{activePeople.length - 3}</Text>
+                </View>
+              ) : null}
             </View>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Open Steven's LifeBook"
+              accessibilityLabel="Open People"
+              onPress={() => router.push('/people')}
               style={({ pressed }) => [styles.arrowButton, pressed && styles.pressed]}>
               <Ionicons name="arrow-forward" size={20} color={AppColors.paper} />
             </Pressable>
@@ -135,16 +172,18 @@ export default function HomeScreen() {
           <QuickCard
             icon="people"
             label="People"
-            value="128"
+            value={String(activePeople.length)}
             color={AppColors.sky}
             backgroundColor={AppColors.skySoft}
+            onPress={() => router.push('/people')}
           />
           <QuickCard
             icon="heart"
             label="Memories"
-            value="23"
+            value={String(activeMemories.length)}
             color={AppColors.blush}
             backgroundColor={AppColors.blushSoft}
+            onPress={() => router.push('/memories')}
           />
           <QuickCard
             icon="book"
@@ -152,6 +191,7 @@ export default function HomeScreen() {
             value="6"
             color={AppColors.violet}
             backgroundColor={AppColors.violetSoft}
+            onPress={() => router.push('/chapters')}
           />
         </View>
 
@@ -183,28 +223,36 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.section}>
-          <SectionHeader title="A memory to keep" action="Open" />
+          <SectionHeader title={latestMemory ? 'A memory to keep' : 'Start the timeline'} action={latestMemory ? 'Open' : 'Add'} />
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Open science fair memory"
+            accessibilityLabel={latestMemory ? `Open ${latestMemory.title}` : 'Add the first memory'}
+            onPress={() => latestMemory
+              ? router.push({ pathname: '/memory', params: { id: latestMemory.id } })
+              : router.push('/edit-memory')}
             style={({ pressed }) => [styles.memoryCard, pressed && styles.pressed]}>
-            <View style={styles.memoryArtwork}>
-              <View style={styles.memoryOrbLarge} />
-              <View style={styles.memoryOrbSmall} />
-              <Ionicons name="sparkles" size={34} color={AppColors.paper} />
-            </View>
+            {latestMemory?.photoUrl ? (
+              <Image source={{ uri: latestMemory.photoUrl }} resizeMode="cover" style={styles.memoryArtwork} />
+            ) : (
+              <View style={styles.memoryArtwork}>
+                <View style={styles.memoryOrbLarge} />
+                <View style={styles.memoryOrbSmall} />
+                <Ionicons name={latestMemory ? 'sparkles' : 'heart'} size={34} color={AppColors.paper} />
+              </View>
+            )}
             <View style={styles.memoryCopy}>
-              <Text style={styles.memoryDate}>MAY 20, 2026</Text>
-              <Text style={styles.memoryTitle}>The science fair</Text>
+              <Text style={styles.memoryDate}>{latestMemory ? memoryDateLabel(latestMemory.occurredOn).toUpperCase() : 'PRIVATE BY DEFAULT'}</Text>
+              <Text style={styles.memoryTitle}>{latestMemory?.title || 'Save the first memory'}</Text>
               <Text style={styles.memoryDetail} numberOfLines={2}>
-                Built a solar system with Ethan and Mason.
+                {latestMemory?.story || 'Keep a story, photo, or small moment and connect the people who were there.'}
               </Text>
               <View style={styles.memoryPeople}>
-                <Avatar initials="EJ" color={AppColors.sky} size={25} />
-                <View style={{ marginLeft: -6 }}>
-                  <Avatar initials="MW" color={AppColors.mint} size={25} />
-                </View>
-                <Text style={styles.memoryPeopleText}>2 people</Text>
+                {latestPeople.slice(0, 2).map((person, index) => (
+                  <View key={person.id} style={{ marginLeft: index === 0 ? 0 : -6 }}>
+                    <Avatar initials={personInitials(person)} imageUri={person.photoUrl} color={index === 0 ? AppColors.sky : AppColors.mint} size={25} />
+                  </View>
+                ))}
+                <Text style={styles.memoryPeopleText}>{latestPeople.length} {latestPeople.length === 1 ? 'person' : 'people'}</Text>
               </View>
             </View>
           </Pressable>

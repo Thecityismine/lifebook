@@ -27,7 +27,9 @@ export default function AddScreen() {
               accessibilityRole="button"
               accessibilityLabel={`Add ${action.title}`}
               onPress={() => {
-                if (action.title === 'Person') {
+                if (action.title === 'Memory') {
+                  router.push('/edit-memory');
+                } else if (action.title === 'Person') {
                   router.push('/edit-person');
                 }
               }}

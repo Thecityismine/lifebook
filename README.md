@@ -16,7 +16,7 @@ Firebase client configuration identifies the project but does not grant data acc
 - `npx tsc --noEmit` — strict TypeScript validation
 - `npx expo-doctor` — Expo dependency and configuration checks
 - `npx expo export --platform all` — Android, iOS, and static-web production exports
-- `npm run test:rules:people` — Firestore and Storage authorization tests; requires Java 21+
+- `npm run test:rules` — Firestore and Storage authorization tests for People and Memories; requires Java 21+
 - `npm run vercel-build` — Vercel static-web build
 
 ## Firebase deployment
@@ -26,4 +26,7 @@ Firebase client configuration identifies the project but does not grant data acc
 
 New Firebase Storage buckets require the Firebase project to use the Blaze plan. After the private bucket and `storage.rules` are active, set `EXPO_PUBLIC_FIREBASE_STORAGE_ENABLED=true` in local and deployment environments. Until then, person creation remains available and the photo control explains that Storage setup is required.
 
-The Phase 2 People model is documented in [`docs/phase2-people-model.md`](docs/phase2-people-model.md).
+The data models are documented in:
+
+- [`docs/phase2-people-model.md`](docs/phase2-people-model.md)
+- [`docs/phase3-memories-model.md`](docs/phase3-memories-model.md)

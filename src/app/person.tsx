@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar } from '@/components/avatar';
 import { AppColors, FontFamily, MaxContentWidth, Radius, Shadow, Spacing } from '@/constants/theme';
 import { useAuthSession } from '@/providers/auth-provider';
+import { memoryDateLabel, subscribeToMemories, type MemoryRecord } from '@/services/memories';
 import {
   personDisplayName,
   personInitials,
@@ -37,6 +38,7 @@ export default function PersonScreen() {
   const [person, setPerson] = useState<PersonRecord | null>(null);
   const [profiles, setProfiles] = useState<ManagedProfileSummary[]>([]);
   const [relationships, setRelationships] = useState<ProfileRelationship[]>([]);
+  const [memories, setMemories] = useState<MemoryRecord[]>([]);
   const [loading, setLoading] = useState(Boolean(personId));
   const [updatingArchive, setUpdatingArchive] = useState(false);
   const [error, setError] = useState('');
@@ -60,6 +62,13 @@ export default function PersonScreen() {
   }, [familyId, personId]);
 
   useEffect(() => {
+    if (!familyId || !setup?.activeProfileId) {
+      return;
+    }
+    return subscribeToMemories(familyId, setup.activeProfileId, setMemories, setError);
+  }, [familyId, setup?.activeProfileId]);
+
+  useEffect(() => {
     if (!familyId || !personId) {
       return;
     }
@@ -75,6 +84,10 @@ export default function PersonScreen() {
     profile,
     relationship: relationships.find((relationship) => relationship.profileId === profile.id) || null,
   })), [profiles, relationships]);
+  const sharedMemories = useMemo(
+    () => memories.filter((memory) => !memory.archivedAt && memory.personIds.includes(personId)),
+    [memories, personId],
+  );
 
   const updateArchive = async (archived: boolean) => {
     if (!familyId || !personId) {
@@ -219,14 +232,47 @@ export default function PersonScreen() {
           ))}
         </View>
 
-        <View style={[styles.card, styles.timelineCard]}>
-          <View style={[styles.detailIcon, { backgroundColor: AppColors.blushSoft }]}>
-            <Ionicons name="heart-outline" size={21} color={AppColors.blush} />
-          </View>
-          <View style={styles.detailCopy}>
+        <View style={styles.sectionHeading}>
+          <View style={styles.sectionHeadingCopy}>
             <Text style={styles.sectionTitle}>Shared memories</Text>
-            <Text style={styles.helper}>Memories involving {person.firstName} will form a private timeline here in Phase 3.</Text>
+            <Text style={styles.helper}>{sharedMemories.length} {sharedMemories.length === 1 ? 'moment includes' : 'moments include'} {person.firstName}.</Text>
           </View>
+          <Pressable
+            accessibilityLabel={`Add a memory with ${person.firstName}`}
+            onPress={() => router.push({ pathname: '/edit-memory', params: { personId: person.id } })}
+            style={styles.smallAction}>
+            <Ionicons name="add" size={19} color={AppColors.violet} />
+            <Text style={styles.smallActionText}>Add</Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.card}>
+          {sharedMemories.length === 0 ? (
+            <View style={styles.timelineCard}>
+              <View style={[styles.detailIcon, { backgroundColor: AppColors.blushSoft }]}>
+                <Ionicons name="heart-outline" size={21} color={AppColors.blush} />
+              </View>
+              <Text style={[styles.helper, styles.detailCopy]}>No shared memories yet. Add the first moment whenever it feels worth keeping.</Text>
+            </View>
+          ) : sharedMemories.slice(0, 5).map((memory, index) => (
+            <View key={memory.id}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Open memory: ${memory.title}`}
+                onPress={() => router.push({ pathname: '/memory', params: { id: memory.id } })}
+                style={({ pressed }) => [styles.memoryRow, pressed && styles.pressed]}>
+                <View style={[styles.detailIcon, { backgroundColor: AppColors.blushSoft }]}>
+                  <Ionicons name="heart" size={20} color={AppColors.blush} />
+                </View>
+                <View style={styles.detailCopy}>
+                  <Text style={styles.detailValue}>{memory.title}</Text>
+                  <Text style={styles.relationshipNotes}>{memoryDateLabel(memory.occurredOn)}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={19} color={AppColors.slate} />
+              </Pressable>
+              {index < Math.min(sharedMemories.length, 5) - 1 ? <View style={styles.divider} /> : null}
+            </View>
+          ))}
         </View>
 
         {error ? (
@@ -290,6 +336,9 @@ const styles = StyleSheet.create({
   relationshipRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, minHeight: 62 },
   relationshipNotes: { color: AppColors.inkMuted, fontSize: 12, lineHeight: 17, marginTop: 4 },
   timelineCard: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
+  memoryRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, minHeight: 62 },
+  smallAction: { flexDirection: 'row', alignItems: 'center', gap: 3, minHeight: 40, paddingHorizontal: Spacing.md, borderRadius: Radius.full, backgroundColor: AppColors.violetSoft },
+  smallActionText: { color: AppColors.violet, fontSize: 13, fontWeight: '700' },
   errorBox: { flexDirection: 'row', gap: Spacing.sm, padding: Spacing.lg, borderRadius: Radius.md, backgroundColor: AppColors.blushSoft },
   errorText: { flex: 1, color: AppColors.danger, fontSize: 13, lineHeight: 19 },
   archiveButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, minHeight: 52, borderRadius: Radius.lg, borderWidth: 1, borderColor: AppColors.border, backgroundColor: AppColors.paper },

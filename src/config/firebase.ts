@@ -17,6 +17,7 @@ export const missingFirebaseEnvironmentKeys = (Object.keys(requiredFirebaseEnvir
   .filter((key) => !requiredFirebaseEnvironment[key]?.trim());
 
 export const isFirebaseConfigured = missingFirebaseEnvironmentKeys.length === 0;
+export const isFirebaseStorageEnabled = process.env.EXPO_PUBLIC_FIREBASE_STORAGE_ENABLED === 'true';
 
 export function getFirebaseOptions(): FirebaseOptions | null {
   if (!isFirebaseConfigured) {

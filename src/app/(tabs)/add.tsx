@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -13,6 +14,8 @@ const actions = [
 ];
 
 export default function AddScreen() {
+  const router = useRouter();
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.content}>
@@ -23,6 +26,11 @@ export default function AddScreen() {
               key={action.title}
               accessibilityRole="button"
               accessibilityLabel={`Add ${action.title}`}
+              onPress={() => {
+                if (action.title === 'Person') {
+                  router.push('/edit-person');
+                }
+              }}
               style={({ pressed }) => [styles.actionCard, pressed && styles.pressed]}>
               <View style={[styles.actionIcon, { backgroundColor: action.soft }]}>
                 <Ionicons name={action.icon} size={27} color={action.color} />

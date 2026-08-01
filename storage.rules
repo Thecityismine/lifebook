@@ -1,0 +1,34 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function verifiedParent() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function memberPath(familyId) {
+      return /databases/(default)/documents/families/$(familyId)/members/$(request.auth.uid);
+    }
+
+    function isFamilyMember(familyId) {
+      return verifiedParent() && firestore.exists(memberPath(familyId));
+    }
+
+    function isFamilyManager(familyId) {
+      return isFamilyMember(familyId)
+        && firestore.get(memberPath(familyId)).data.role in ['owner', 'guardian'];
+    }
+
+    match /families/{familyId}/people/{personId}/{fileName} {
+      allow read: if isFamilyMember(familyId);
+      allow create, update: if isFamilyManager(familyId)
+        && request.resource.size < 8 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow delete: if isFamilyManager(familyId);
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

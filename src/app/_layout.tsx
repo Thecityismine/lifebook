@@ -6,6 +6,7 @@ import { AppColors } from '@/constants/theme';
 import { AuthProvider, useAuthSession } from '@/providers/auth-provider';
 
 const publicRoutes = new Set(['index', 'sign-in', 'consent', 'create-account']);
+const protectedDetailRoutes = new Set(['person', 'edit-person', 'manage-relationship']);
 
 function AppNavigator() {
   const router = useRouter();
@@ -50,7 +51,7 @@ function AppNavigator() {
       return;
     }
 
-    if (firstSegment !== '(tabs)') {
+    if (firstSegment !== '(tabs)' && !protectedDetailRoutes.has(firstSegment)) {
       router.replace('/home');
     }
   }, [firstSegment, initializing, router, setup, setupLoading, user]);
@@ -72,6 +73,9 @@ function AppNavigator() {
         <Stack.Screen name="family" />
         <Stack.Screen name="child" />
         <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+        <Stack.Screen name="person" />
+        <Stack.Screen name="edit-person" />
+        <Stack.Screen name="manage-relationship" />
       </Stack>
     </>
   );

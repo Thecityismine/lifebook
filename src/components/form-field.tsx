@@ -4,14 +4,24 @@ import { AppColors, FontFamily, Radius, Spacing } from '@/constants/theme';
 
 type FormFieldProps = Pick<
   TextInputProps,
-  'autoCapitalize' | 'autoComplete' | 'keyboardType' | 'onChangeText' | 'secureTextEntry' | 'textContentType' | 'value'
+  | 'autoCapitalize'
+  | 'autoComplete'
+  | 'keyboardType'
+  | 'maxLength'
+  | 'multiline'
+  | 'numberOfLines'
+  | 'onChangeText'
+  | 'returnKeyType'
+  | 'secureTextEntry'
+  | 'textContentType'
+  | 'value'
 > & {
   label: string;
   placeholder: string;
   hint?: string;
 };
 
-export function FormField({ label, placeholder, hint, ...inputProps }: FormFieldProps) {
+export function FormField({ label, placeholder, hint, multiline, ...inputProps }: FormFieldProps) {
   return (
     <View style={styles.group}>
       <Text style={styles.label}>{label}</Text>
@@ -19,7 +29,8 @@ export function FormField({ label, placeholder, hint, ...inputProps }: FormField
         accessibilityLabel={label}
         placeholder={placeholder}
         placeholderTextColor={AppColors.slate}
-        style={styles.input}
+        multiline={multiline}
+        style={[styles.input, multiline && styles.multiline]}
         {...inputProps}
       />
       {hint ? <Text style={styles.hint}>{hint}</Text> : null}
@@ -47,6 +58,11 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily?.regular,
     fontSize: 16,
     paddingHorizontal: Spacing.lg,
+  },
+  multiline: {
+    minHeight: 108,
+    paddingTop: Spacing.lg,
+    textAlignVertical: 'top',
   },
   hint: {
     color: AppColors.inkMuted,

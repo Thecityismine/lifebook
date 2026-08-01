@@ -7,6 +7,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar } from '@/components/avatar';
 import { AppColors, FontFamily, MaxContentWidth, Radius, Shadow, Spacing } from '@/constants/theme';
 import { useAuthSession } from '@/providers/auth-provider';
+import { chapterColor, chapterIcon } from '@/constants/chapters';
+import { subscribeToChapters, type ChapterRecord } from '@/services/chapters';
 import { memoryDateLabel, setMemoryArchived, subscribeToMemory, type MemoryRecord } from '@/services/memories';
 import { personDisplayName, personInitials, subscribeToPeople, type PersonRecord } from '@/services/people';
 
@@ -15,9 +17,11 @@ export default function MemoryScreen() {
   const params = useLocalSearchParams<{ id?: string }>();
   const { setup } = useAuthSession();
   const familyId = setup?.familyId || '';
+  const profileId = setup?.activeProfileId || '';
   const memoryId = typeof params.id === 'string' ? params.id : '';
   const [memory, setMemory] = useState<MemoryRecord | null>(null);
   const [people, setPeople] = useState<PersonRecord[]>([]);
+  const [chapters, setChapters] = useState<ChapterRecord[]>([]);
   const [loading, setLoading] = useState(Boolean(memoryId));
   const [updatingArchive, setUpdatingArchive] = useState(false);
   const [error, setError] = useState('');
@@ -47,9 +51,20 @@ export default function MemoryScreen() {
     return subscribeToPeople(familyId, setPeople, setError);
   }, [familyId]);
 
+  useEffect(() => {
+    if (!familyId || !profileId) {
+      return;
+    }
+    return subscribeToChapters(familyId, profileId, setChapters, setError);
+  }, [familyId, profileId]);
+
   const linkedPeople = useMemo(() => memory
     ? memory.personIds.map((personId) => people.find((person) => person.id === personId)).filter((person): person is PersonRecord => Boolean(person))
     : [], [memory, people]);
+  const relatedChapters = useMemo(
+    () => chapters.filter((chapter) => !chapter.archivedAt && chapter.memoryIds.includes(memoryId)),
+    [chapters, memoryId],
+  );
 
   const updateArchive = async (archived: boolean) => {
     if (!familyId || !memoryId) {
@@ -171,6 +186,44 @@ export default function MemoryScreen() {
           ))}
         </View>
 
+        <View style={styles.card}>
+          <View style={styles.cardHeading}>
+            <View style={styles.cardHeadingCopy}>
+              <Text style={styles.sectionTitle}>Chapters</Text>
+              <Text style={styles.cardHelper}>The parts of the story that include this memory.</Text>
+            </View>
+            <Pressable
+              accessibilityLabel="Create a chapter with this memory"
+              onPress={() => router.push({ pathname: '/edit-chapter', params: { memoryId: memory.id } })}
+              style={styles.smallAction}>
+              <Ionicons name="add" size={18} color={AppColors.violet} />
+              <Text style={styles.smallActionText}>New</Text>
+            </Pressable>
+          </View>
+          {relatedChapters.length === 0 ? (
+            <Text style={styles.emptyValue}>This memory is not part of a chapter yet.</Text>
+          ) : relatedChapters.map((chapter, index) => {
+            const visualColor = chapterColor(chapter.colorKey);
+            const visualIcon = chapterIcon(chapter.iconKey);
+            return (
+              <View key={chapter.id}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open chapter: ${chapter.title}`}
+                  onPress={() => router.push({ pathname: '/chapter', params: { id: chapter.id } })}
+                  style={({ pressed }) => [styles.chapterRow, pressed && styles.pressed]}>
+                  <View style={[styles.chapterIcon, { backgroundColor: visualColor.softColor }]}>
+                    <Ionicons name={visualIcon.icon} size={20} color={visualColor.color} />
+                  </View>
+                  <Text style={styles.chapterTitle}>{chapter.title}</Text>
+                  <Ionicons name="chevron-forward" size={19} color={AppColors.slate} />
+                </Pressable>
+                {index < relatedChapters.length - 1 ? <View style={styles.divider} /> : null}
+              </View>
+            );
+          })}
+        </View>
+
         {error ? (
           <View style={styles.errorBox}>
             <Ionicons name="alert-circle" size={19} color={AppColors.danger} />
@@ -215,6 +268,14 @@ const styles = StyleSheet.create({
   sectionTitle: { color: AppColors.ink, fontSize: 18, fontWeight: '700' },
   story: { color: AppColors.ink, fontSize: 15, lineHeight: 24 },
   emptyValue: { color: AppColors.slate, fontSize: 14, lineHeight: 21, fontStyle: 'italic' },
+  cardHeading: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: Spacing.md },
+  cardHeadingCopy: { flex: 1, gap: 3 },
+  cardHelper: { color: AppColors.inkMuted, fontSize: 13, lineHeight: 19 },
+  smallAction: { flexDirection: 'row', alignItems: 'center', gap: 3, minHeight: 38, paddingHorizontal: Spacing.md, borderRadius: Radius.full, backgroundColor: AppColors.violetSoft },
+  smallActionText: { color: AppColors.violet, fontSize: 12, fontWeight: '700' },
+  chapterRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, minHeight: 54 },
+  chapterIcon: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center', borderRadius: Radius.md },
+  chapterTitle: { flex: 1, color: AppColors.ink, fontSize: 14, fontWeight: '700' },
   personRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, minHeight: 56 },
   personCopy: { flex: 1 },
   personName: { color: AppColors.ink, fontSize: 15, fontWeight: '700', marginBottom: 2 },

@@ -9,6 +9,7 @@ import { SectionHeader } from '@/components/section-header';
 import { AppColors, FontFamily, MaxContentWidth, Radius, Shadow, Spacing } from '@/constants/theme';
 import { useAuthSession } from '@/providers/auth-provider';
 import { signOutParent } from '@/services/auth';
+import { subscribeToChapters, type ChapterRecord } from '@/services/chapters';
 import { getFamilySummary, type FamilySummary } from '@/services/family';
 import { memoryDateLabel, subscribeToMemories, type MemoryRecord } from '@/services/memories';
 import { personInitials, subscribeToPeople, type PersonRecord } from '@/services/people';
@@ -49,6 +50,7 @@ export default function HomeScreen() {
   const [summary, setSummary] = useState<FamilySummary | null>(null);
   const [people, setPeople] = useState<PersonRecord[]>([]);
   const [memories, setMemories] = useState<MemoryRecord[]>([]);
+  const [chapters, setChapters] = useState<ChapterRecord[]>([]);
   const profileName = summary?.profileName || 'Your family';
   const accountInitials = (user?.displayName || user?.email || 'Parent')
     .split(/[\s@]+/)
@@ -89,14 +91,17 @@ export default function HomeScreen() {
     const ignoreError = () => undefined;
     const unsubscribePeople = subscribeToPeople(setup.familyId, setPeople, ignoreError);
     const unsubscribeMemories = subscribeToMemories(setup.familyId, setup.activeProfileId, setMemories, ignoreError);
+    const unsubscribeChapters = subscribeToChapters(setup.familyId, setup.activeProfileId, setChapters, ignoreError);
     return () => {
       unsubscribePeople();
       unsubscribeMemories();
+      unsubscribeChapters();
     };
   }, [setup?.activeProfileId, setup?.familyId]);
 
   const activePeople = useMemo(() => people.filter((person) => !person.archivedAt), [people]);
   const activeMemories = useMemo(() => memories.filter((memory) => !memory.archivedAt), [memories]);
+  const activeChapters = useMemo(() => chapters.filter((chapter) => !chapter.archivedAt), [chapters]);
   const latestMemory = activeMemories[0] || null;
   const latestPeople = useMemo(() => {
     if (!latestMemory) {
@@ -188,7 +193,7 @@ export default function HomeScreen() {
           <QuickCard
             icon="book"
             label="Chapters"
-            value="6"
+            value={String(activeChapters.length)}
             color={AppColors.violet}
             backgroundColor={AppColors.violetSoft}
             onPress={() => router.push('/chapters')}

@@ -11,6 +11,7 @@ const outsiderFamilyId = 'family-b';
 const profileId = 'profile-a';
 const personId = 'person-a';
 const memoryId = 'memory-a';
+const chapterId = 'chapter-a';
 let testEnvironment;
 
 function personData() {
@@ -42,6 +43,25 @@ function memoryData() {
     personIds: [personId],
     photoUrl: null,
     photoPath: null,
+    archivedAt: null,
+    createdBy: ownerId,
+    schemaVersion: 1,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  };
+}
+
+function chapterData() {
+  return {
+    familyId,
+    profileId,
+    title: 'Fifth grade',
+    description: 'A year of new friends and big changes.',
+    startsOn: '2026-08-20',
+    endsOn: '2027-06-10',
+    iconKey: 'school',
+    colorKey: 'violet',
+    memoryIds: [memoryId],
     archivedAt: null,
     createdBy: ownerId,
     schemaVersion: 1,
@@ -206,4 +226,42 @@ test('memory records and images deny invalid or cross-family access', async () =
   await assertFails(getDoc(doc(outsiderContext.firestore(), 'families', familyId, 'memories', memoryId)));
   await assertFails(outsiderContext.storage('gs://lifebook-31782.firebasestorage.app')
     .ref(imageRef.fullPath).getMetadata());
+});
+
+test('owner can create, read, edit, archive, and restore a profile chapter', async () => {
+  const db = testEnvironment.authenticatedContext(ownerId, {
+    email: 'owner-a@example.com', email_verified: true,
+  }).firestore();
+  const chapterRef = doc(db, 'families', familyId, 'chapters', chapterId);
+
+  await assertSucceeds(setDoc(chapterRef, chapterData()));
+  await assertSucceeds(getDoc(chapterRef));
+  await assertSucceeds(updateDoc(chapterRef, {
+    title: 'Our fifth-grade year',
+    archivedAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  }));
+  await assertSucceeds(updateDoc(chapterRef, { archivedAt: null, updatedAt: serverTimestamp() }));
+  await assertFails(updateDoc(chapterRef, { profileId: 'another-profile', updatedAt: serverTimestamp() }));
+  await assertFails(deleteDoc(chapterRef));
+});
+
+test('chapter records deny invalid-profile and cross-family access', async () => {
+  const ownerDb = testEnvironment.authenticatedContext(ownerId, {
+    email: 'owner-a@example.com', email_verified: true,
+  }).firestore();
+  await assertSucceeds(setDoc(doc(ownerDb, 'families', familyId, 'chapters', chapterId), chapterData()));
+  await assertFails(setDoc(doc(ownerDb, 'families', familyId, 'chapters', 'missing-profile'), {
+    ...chapterData(),
+    profileId: 'missing-profile',
+  }));
+
+  const outsiderDb = testEnvironment.authenticatedContext(outsiderId, {
+    email: 'owner-b@example.com', email_verified: true,
+  }).firestore();
+  await assertFails(getDoc(doc(outsiderDb, 'families', familyId, 'chapters', chapterId)));
+  await assertFails(setDoc(doc(outsiderDb, 'families', familyId, 'chapters', 'intruder-chapter'), {
+    ...chapterData(),
+    createdBy: outsiderId,
+  }));
 });

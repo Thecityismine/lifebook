@@ -31,6 +31,8 @@ export default function AddScreen() {
                   router.push('/edit-memory');
                 } else if (action.title === 'Person') {
                   router.push('/edit-person');
+                } else if (action.title === 'Chapter') {
+                  router.push('/edit-chapter');
                 }
               }}
               style={({ pressed }) => [styles.actionCard, pressed && styles.pressed]}>

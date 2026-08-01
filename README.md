@@ -30,3 +30,4 @@ The data models are documented in:
 
 - [`docs/phase2-people-model.md`](docs/phase2-people-model.md)
 - [`docs/phase3-memories-model.md`](docs/phase3-memories-model.md)
+- [`docs/phase4-chapters-model.md`](docs/phase4-chapters-model.md)

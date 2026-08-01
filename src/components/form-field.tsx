@@ -1,0 +1,57 @@
+import { StyleSheet, Text, TextInput, type TextInputProps, View } from 'react-native';
+
+import { AppColors, FontFamily, Radius, Spacing } from '@/constants/theme';
+
+type FormFieldProps = Pick<
+  TextInputProps,
+  'autoCapitalize' | 'autoComplete' | 'keyboardType' | 'onChangeText' | 'secureTextEntry' | 'textContentType' | 'value'
+> & {
+  label: string;
+  placeholder: string;
+  hint?: string;
+};
+
+export function FormField({ label, placeholder, hint, ...inputProps }: FormFieldProps) {
+  return (
+    <View style={styles.group}>
+      <Text style={styles.label}>{label}</Text>
+      <TextInput
+        accessibilityLabel={label}
+        placeholder={placeholder}
+        placeholderTextColor={AppColors.slate}
+        style={styles.input}
+        {...inputProps}
+      />
+      {hint ? <Text style={styles.hint}>{hint}</Text> : null}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  group: {
+    gap: Spacing.sm,
+  },
+  label: {
+    color: AppColors.ink,
+    fontFamily: FontFamily?.medium,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  input: {
+    minHeight: 54,
+    borderWidth: 1,
+    borderColor: AppColors.line,
+    borderRadius: Radius.md,
+    backgroundColor: AppColors.paper,
+    color: AppColors.ink,
+    fontFamily: FontFamily?.regular,
+    fontSize: 16,
+    paddingHorizontal: Spacing.lg,
+  },
+  hint: {
+    color: AppColors.inkMuted,
+    fontFamily: FontFamily?.regular,
+    fontSize: 12,
+    lineHeight: 17,
+  },
+});

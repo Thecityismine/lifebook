@@ -1,0 +1,102 @@
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+
+import { FormField } from '@/components/form-field';
+import { OnboardingShell } from '@/components/onboarding-shell';
+import { PrimaryButton } from '@/components/primary-button';
+import { AppColors, Radius, Spacing } from '@/constants/theme';
+import { signInParent } from '@/services/auth';
+
+export default function SignInScreen() {
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [message, setMessage] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const ready = email.trim().length > 0 && password.length > 0;
+
+  async function handleSignIn() {
+    setMessage(null);
+    setSubmitting(true);
+    const result = await signInParent(email, password);
+    setSubmitting(false);
+
+    if (!result.ok) {
+      setMessage(result.message);
+      return;
+    }
+
+    if (result.emailVerified) {
+      // The root guard resolves this checkpoint to family setup, child setup,
+      // or Home after the persisted parent setup snapshot arrives.
+      router.replace('/child');
+    } else {
+      router.replace({ pathname: '/verify-email', params: { email: email.trim() } });
+    }
+  }
+
+  return (
+    <OnboardingShell
+      eyebrow="Welcome back"
+      title="Open your family LifeBook"
+      subtitle="Sign in with the parent or guardian account that owns your private family space."
+      onBack={() => router.back()}
+      footer={
+        <PrimaryButton
+          label="Sign in securely"
+          disabled={!ready}
+          loading={submitting}
+          onPress={handleSignIn}
+          icon="lock-closed"
+        />
+      }>
+      <View style={styles.form}>
+        <FormField
+          label="Email address"
+          placeholder="you@example.com"
+          value={email}
+          onChangeText={(value) => {
+            setEmail(value);
+            setMessage(null);
+          }}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoComplete="email"
+          textContentType="emailAddress"
+        />
+        <FormField
+          label="Password"
+          placeholder="Your password"
+          value={password}
+          onChangeText={(value) => {
+            setPassword(value);
+            setMessage(null);
+          }}
+          secureTextEntry
+          autoCapitalize="none"
+          autoComplete="password"
+          textContentType="password"
+        />
+        {message ? (
+          <View accessibilityRole="alert" style={styles.notice}>
+            <Text style={styles.noticeTitle}>We couldn’t sign you in</Text>
+            <Text style={styles.noticeBody}>{message}</Text>
+          </View>
+        ) : null}
+      </View>
+    </OnboardingShell>
+  );
+}
+
+const styles = StyleSheet.create({
+  form: { gap: Spacing.xl },
+  notice: {
+    borderRadius: Radius.md,
+    backgroundColor: AppColors.sunSoft,
+    padding: Spacing.lg,
+    gap: Spacing.xs,
+  },
+  noticeTitle: { color: AppColors.ink, fontSize: 14, fontWeight: '800' },
+  noticeBody: { color: AppColors.inkMuted, fontSize: 13, lineHeight: 19 },
+});

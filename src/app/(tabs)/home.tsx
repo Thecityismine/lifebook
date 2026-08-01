@@ -1,0 +1,421 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { Avatar } from '@/components/avatar';
+import { SectionHeader } from '@/components/section-header';
+import { AppColors, FontFamily, MaxContentWidth, Radius, Shadow, Spacing } from '@/constants/theme';
+import { people } from '@/data/demo';
+import { useAuthSession } from '@/providers/auth-provider';
+import { signOutParent } from '@/services/auth';
+import { getFamilySummary, type FamilySummary } from '@/services/family';
+
+function QuickCard({
+  icon,
+  label,
+  value,
+  color,
+  backgroundColor,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  value: string;
+  color: string;
+  backgroundColor: string;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${label}, ${value}`}
+      style={({ pressed }) => [styles.quickCard, { backgroundColor }, pressed && styles.pressed]}>
+      <View style={[styles.quickIcon, { backgroundColor: AppColors.paper }]}>
+        <Ionicons name={icon} size={19} color={color} />
+      </View>
+      <Text style={styles.quickValue}>{value}</Text>
+      <Text style={styles.quickLabel}>{label}</Text>
+    </Pressable>
+  );
+}
+
+export default function HomeScreen() {
+  const { user, setup } = useAuthSession();
+  const [summary, setSummary] = useState<FamilySummary | null>(null);
+  const profileName = summary?.profileName || 'Your family';
+  const accountInitials = (user?.displayName || user?.email || 'Parent')
+    .split(/[\s@]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join('');
+
+  useEffect(() => {
+    let active = true;
+    if (!setup) {
+      return () => {
+        active = false;
+      };
+    }
+
+    getFamilySummary(setup)
+      .then((nextSummary) => {
+        if (active) {
+          setSummary(nextSummary);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setSummary(null);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [setup]);
+
+  return (
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        contentInsetAdjustmentBehavior="automatic">
+        <View style={styles.header}>
+          <View style={styles.headerCopy}>
+            <Text style={styles.brand}>{summary?.familyName || 'LifeBook'}</Text>
+            <Text style={styles.greeting}>Good morning</Text>
+            <Text style={styles.profileName}>{profileName}’s story</Text>
+          </View>
+          <View style={styles.headerActions}>
+            <Avatar initials={accountInitials || 'P'} size={50} color={AppColors.violet} badge />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Sign out"
+              onPress={() => {
+                void signOutParent();
+              }}
+              style={({ pressed }) => [styles.signOutButton, pressed && styles.pressed]}>
+              <Ionicons name="log-out-outline" size={21} color={AppColors.inkMuted} />
+            </Pressable>
+          </View>
+        </View>
+
+        <View style={styles.storyCard}>
+          <View style={styles.storyGlowOne} />
+          <View style={styles.storyGlowTwo} />
+          <View style={styles.storyTopRow}>
+            <View style={styles.storyIcon}>
+              <Ionicons name="book" size={20} color={AppColors.violet} />
+            </View>
+            <Text style={styles.storyEyebrow}>{profileName.toUpperCase()}’S LIFEBOOK</Text>
+          </View>
+          <Text style={styles.storyTitle}>128 people are part of his story.</Text>
+          <Text style={styles.storyBody}>A growing collection of friends, family, and the moments they share.</Text>
+          <View style={styles.storyFooter}>
+            <View style={styles.avatarStack}>
+              {people.slice(0, 3).map((person, index) => (
+                <View key={person.id} style={[styles.stackedAvatar, { marginLeft: index === 0 ? 0 : -9 }]}>
+                  <Avatar initials={person.initials} color={person.color} size={34} />
+                </View>
+              ))}
+              <View style={[styles.avatarCount, { marginLeft: -9 }]}>
+                <Text style={styles.avatarCountText}>+125</Text>
+              </View>
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Open Steven's LifeBook"
+              style={({ pressed }) => [styles.arrowButton, pressed && styles.pressed]}>
+              <Ionicons name="arrow-forward" size={20} color={AppColors.paper} />
+            </Pressable>
+          </View>
+        </View>
+
+        <View style={styles.quickGrid}>
+          <QuickCard
+            icon="people"
+            label="People"
+            value="128"
+            color={AppColors.sky}
+            backgroundColor={AppColors.skySoft}
+          />
+          <QuickCard
+            icon="heart"
+            label="Memories"
+            value="23"
+            color={AppColors.blush}
+            backgroundColor={AppColors.blushSoft}
+          />
+          <QuickCard
+            icon="book"
+            label="Chapters"
+            value="6"
+            color={AppColors.violet}
+            backgroundColor={AppColors.violetSoft}
+          />
+        </View>
+
+        <View style={styles.section}>
+          <SectionHeader title="Coming up" action="See all" />
+          <View style={styles.listCard}>
+            <View style={styles.eventRow}>
+              <View style={[styles.eventIcon, { backgroundColor: AppColors.sunSoft }]}>
+                <Ionicons name="gift" size={22} color={AppColors.sun} />
+              </View>
+              <View style={styles.eventCopy}>
+                <Text style={styles.eventTitle}>Ethan’s birthday</Text>
+                <Text style={styles.eventDetail}>In 3 days · August 4</Text>
+              </View>
+              <Avatar initials="EJ" color={AppColors.sky} size={38} />
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.eventRow}>
+              <View style={[styles.eventIcon, { backgroundColor: AppColors.mintSoft }]}>
+                <Ionicons name="football" size={22} color={AppColors.mint} />
+              </View>
+              <View style={styles.eventCopy}>
+                <Text style={styles.eventTitle}>Soccer practice</Text>
+                <Text style={styles.eventDetail}>Saturday · 10:00 AM</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={19} color={AppColors.slate} />
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <SectionHeader title="A memory to keep" action="Open" />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Open science fair memory"
+            style={({ pressed }) => [styles.memoryCard, pressed && styles.pressed]}>
+            <View style={styles.memoryArtwork}>
+              <View style={styles.memoryOrbLarge} />
+              <View style={styles.memoryOrbSmall} />
+              <Ionicons name="sparkles" size={34} color={AppColors.paper} />
+            </View>
+            <View style={styles.memoryCopy}>
+              <Text style={styles.memoryDate}>MAY 20, 2026</Text>
+              <Text style={styles.memoryTitle}>The science fair</Text>
+              <Text style={styles.memoryDetail} numberOfLines={2}>
+                Built a solar system with Ethan and Mason.
+              </Text>
+              <View style={styles.memoryPeople}>
+                <Avatar initials="EJ" color={AppColors.sky} size={25} />
+                <View style={{ marginLeft: -6 }}>
+                  <Avatar initials="MW" color={AppColors.mint} size={25} />
+                </View>
+                <Text style={styles.memoryPeopleText}>2 people</Text>
+              </View>
+            </View>
+          </Pressable>
+        </View>
+
+        <View style={styles.privateNote}>
+          <Ionicons name="lock-closed" size={16} color={AppColors.mint} />
+          <Text style={styles.privateNoteText}>Private to your family by default</Text>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: AppColors.cloud },
+  content: {
+    width: '100%',
+    maxWidth: MaxContentWidth,
+    alignSelf: 'center',
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.md,
+    paddingBottom: 120,
+    gap: Spacing.xxl,
+  },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  signOutButton: {
+    width: 44,
+    height: 44,
+    borderRadius: Radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: AppColors.paper,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+  },
+  headerCopy: { flex: 1 },
+  brand: {
+    color: AppColors.violet,
+    fontFamily: FontFamily?.bold,
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+    marginBottom: 6,
+  },
+  greeting: { color: AppColors.inkMuted, fontFamily: FontFamily?.regular, fontSize: 14 },
+  profileName: {
+    color: AppColors.ink,
+    fontFamily: FontFamily?.bold,
+    fontSize: 26,
+    fontWeight: '700',
+    letterSpacing: -0.6,
+  },
+  storyCard: {
+    minHeight: 260,
+    padding: Spacing.xxl,
+    borderRadius: Radius.xl,
+    backgroundColor: AppColors.ink,
+    overflow: 'hidden',
+    ...Shadow.card,
+  },
+  storyGlowOne: {
+    position: 'absolute',
+    width: 190,
+    height: 190,
+    borderRadius: 95,
+    backgroundColor: '#3D337D',
+    right: -55,
+    top: -68,
+  },
+  storyGlowTwo: {
+    position: 'absolute',
+    width: 125,
+    height: 125,
+    borderRadius: 63,
+    backgroundColor: '#274E63',
+    right: 18,
+    bottom: -70,
+  },
+  storyTopRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
+  storyIcon: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 38,
+    height: 38,
+    borderRadius: Radius.md,
+    backgroundColor: AppColors.paper,
+  },
+  storyEyebrow: {
+    color: '#C8C1FF',
+    fontFamily: FontFamily?.medium,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1.1,
+  },
+  storyTitle: {
+    color: AppColors.paper,
+    fontFamily: FontFamily?.bold,
+    fontSize: 28,
+    lineHeight: 34,
+    fontWeight: '700',
+    letterSpacing: -0.7,
+    marginTop: Spacing.xl,
+    maxWidth: 300,
+  },
+  storyBody: {
+    color: '#C9D0E0',
+    fontFamily: FontFamily?.regular,
+    fontSize: 14,
+    lineHeight: 21,
+    marginTop: Spacing.sm,
+    maxWidth: 300,
+  },
+  storyFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: Spacing.xl,
+  },
+  avatarStack: { flexDirection: 'row', alignItems: 'center' },
+  stackedAvatar: { borderRadius: Radius.full, borderWidth: 2, borderColor: AppColors.ink },
+  avatarCount: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 34,
+    minWidth: 48,
+    paddingHorizontal: 9,
+    borderRadius: Radius.full,
+    backgroundColor: '#40378B',
+    borderWidth: 2,
+    borderColor: AppColors.ink,
+  },
+  avatarCountText: { color: AppColors.paper, fontSize: 11, fontWeight: '700' },
+  arrowButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 44,
+    height: 44,
+    borderRadius: Radius.full,
+    backgroundColor: AppColors.violet,
+  },
+  quickGrid: { flexDirection: 'row', gap: Spacing.md },
+  quickCard: { flex: 1, minHeight: 118, padding: Spacing.md, borderRadius: Radius.lg },
+  quickIcon: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 34,
+    height: 34,
+    borderRadius: Radius.md,
+    marginBottom: Spacing.md,
+  },
+  quickValue: { color: AppColors.ink, fontSize: 21, fontWeight: '700', lineHeight: 24 },
+  quickLabel: { color: AppColors.inkMuted, fontSize: 12, marginTop: 2 },
+  section: { gap: Spacing.md },
+  listCard: {
+    backgroundColor: AppColors.paper,
+    borderRadius: Radius.lg,
+    paddingHorizontal: Spacing.lg,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+    ...Shadow.card,
+  },
+  eventRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, minHeight: 76 },
+  eventIcon: { alignItems: 'center', justifyContent: 'center', width: 44, height: 44, borderRadius: Radius.md },
+  eventCopy: { flex: 1 },
+  eventTitle: { color: AppColors.ink, fontSize: 15, fontWeight: '700', marginBottom: 3 },
+  eventDetail: { color: AppColors.inkMuted, fontSize: 13 },
+  divider: { height: StyleSheet.hairlineWidth, backgroundColor: AppColors.line, marginLeft: 56 },
+  memoryCard: {
+    flexDirection: 'row',
+    minHeight: 168,
+    borderRadius: Radius.lg,
+    backgroundColor: AppColors.paper,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+    overflow: 'hidden',
+    ...Shadow.card,
+  },
+  memoryArtwork: {
+    width: 118,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: AppColors.violet,
+    overflow: 'hidden',
+  },
+  memoryOrbLarge: {
+    position: 'absolute',
+    width: 95,
+    height: 95,
+    borderRadius: 48,
+    backgroundColor: '#8574F2',
+    top: -28,
+    left: -32,
+  },
+  memoryOrbSmall: {
+    position: 'absolute',
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: '#5140CE',
+    right: -12,
+    bottom: -12,
+  },
+  memoryCopy: { flex: 1, padding: Spacing.lg, justifyContent: 'center' },
+  memoryDate: { color: AppColors.violet, fontSize: 10, fontWeight: '800', letterSpacing: 0.8 },
+  memoryTitle: { color: AppColors.ink, fontSize: 17, fontWeight: '700', marginTop: 4 },
+  memoryDetail: { color: AppColors.inkMuted, fontSize: 13, lineHeight: 18, marginTop: 4 },
+  memoryPeople: { flexDirection: 'row', alignItems: 'center', marginTop: 12 },
+  memoryPeopleText: { color: AppColors.inkMuted, fontSize: 11, fontWeight: '600', marginLeft: 8 },
+  privateNote: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
+  privateNoteText: { color: AppColors.inkMuted, fontSize: 12, fontWeight: '600' },
+  pressed: { opacity: 0.68, transform: [{ scale: 0.99 }] },
+});

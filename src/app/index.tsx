@@ -1,98 +1,124 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { OnboardingShell } from '@/components/onboarding-shell';
+import { PrimaryButton } from '@/components/primary-button';
+import { AppColors, FontFamily, Radius, Spacing } from '@/constants/theme';
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+const promises = [
+  { icon: 'lock-closed' as const, text: 'Private to your family' },
+  { icon: 'people' as const, text: 'Led by a parent or guardian' },
+  { icon: 'heart' as const, text: 'Built for stories, not likes' },
+];
+
+export default function WelcomeScreen() {
+  const router = useRouter();
+
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+    <OnboardingShell
+      eyebrow="A private family archive"
+      title="Remember your people. Keep your shared history."
+      subtitle="LifeBook gives your family one thoughtful place for the people, memories, and chapters that shape a life."
+      footer={
+        <View style={styles.actions}>
+          <PrimaryButton label="Start your family LifeBook" onPress={() => router.push('/consent')} />
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push('/sign-in')}
+            style={({ pressed }) => [styles.signInButton, pressed && styles.pressed]}>
+            <Text style={styles.signInCopy}>Already have an account?</Text>
+            <Text style={styles.signInAction}>Sign in</Text>
+          </Pressable>
+        </View>
+      }>
+      <View style={styles.hero}>
+        <View style={styles.heroGlowOne} />
+        <View style={styles.heroGlowTwo} />
+        <View style={styles.bookMark}>
+          <Ionicons name="book" size={39} color={AppColors.violet} />
+        </View>
+        <View style={styles.connectionRow}>
+          <View style={[styles.dot, { backgroundColor: AppColors.sky }]} />
+          <View style={styles.connectionLine} />
+          <View style={[styles.dot, { backgroundColor: AppColors.mint }]} />
+          <View style={styles.connectionLine} />
+          <View style={[styles.dot, { backgroundColor: AppColors.blush }]} />
+        </View>
+      </View>
 
-export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+      <View style={styles.promises}>
+        {promises.map((item) => (
+          <View key={item.text} style={styles.promiseRow}>
+            <View style={styles.promiseIcon}>
+              <Ionicons name={item.icon} size={17} color={AppColors.violet} />
+            </View>
+            <Text style={styles.promiseText}>{item.text}</Text>
+          </View>
+        ))}
+      </View>
+    </OnboardingShell>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  hero: {
+    height: 214,
+    borderRadius: Radius.xl,
+    backgroundColor: AppColors.ink,
+    alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  heroGlowOne: {
+    position: 'absolute',
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    right: -50,
+    top: -70,
+    backgroundColor: '#413884',
+  },
+  heroGlowTwo: {
+    position: 'absolute',
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    left: -30,
+    bottom: -70,
+    backgroundColor: '#235064',
+  },
+  bookMark: {
+    width: 78,
+    height: 78,
+    borderRadius: Radius.xl,
+    backgroundColor: AppColors.paper,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  connectionRow: { flexDirection: 'row', alignItems: 'center', marginTop: Spacing.xl },
+  dot: { width: 11, height: 11, borderRadius: Radius.full },
+  connectionLine: { width: 44, height: 2, backgroundColor: '#7E75BC' },
+  promises: { marginTop: Spacing.xxl, gap: Spacing.md },
+  promiseRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
+  promiseIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: Radius.md,
+    backgroundColor: AppColors.violetSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  promiseText: { color: AppColors.ink, fontFamily: FontFamily?.medium, fontSize: 14, fontWeight: '600' },
+  actions: { gap: Spacing.md },
+  signInButton: {
+    minHeight: 48,
     flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
-  },
-  heroSection: {
     alignItems: 'center',
     justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+    gap: 5,
   },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
-  },
+  signInCopy: { color: AppColors.inkMuted, fontSize: 14 },
+  signInAction: { color: AppColors.violet, fontSize: 14, fontWeight: '800' },
+  pressed: { opacity: 0.6 },
 });

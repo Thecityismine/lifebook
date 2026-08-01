@@ -1,0 +1,187 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function verifiedParent() {
+      return signedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isSelf(userId) {
+      return verifiedParent() && request.auth.uid == userId;
+    }
+
+    function memberPath(familyId) {
+      return /databases/$(database)/documents/families/$(familyId)/members/$(request.auth.uid);
+    }
+
+    function isFamilyMember(familyId) {
+      return verifiedParent() && exists(memberPath(familyId));
+    }
+
+    function isFamilyManager(familyId) {
+      return isFamilyMember(familyId)
+        && (get(memberPath(familyId)).data.role == 'owner'
+          || get(memberPath(familyId)).data.role == 'guardian');
+    }
+
+    function isFamilyOwner(familyId) {
+      return isFamilyMember(familyId) && get(memberPath(familyId)).data.role == 'owner';
+    }
+
+    function validFamily(data) {
+      return data.keys().hasAll(['name', 'ownerId', 'schemaVersion', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['name', 'ownerId', 'schemaVersion', 'createdAt', 'updatedAt'])
+        && data.name is string
+        && data.name.size() >= 2
+        && data.name.size() <= 80
+        && data.ownerId == request.auth.uid
+        && data.schemaVersion == 1
+        && data.createdAt == request.time
+        && data.updatedAt == request.time;
+    }
+
+    function validOwnerMember(data, userId) {
+      return data.keys().hasAll(['userId', 'role', 'displayName', 'email', 'joinedAt'])
+        && data.keys().hasOnly(['userId', 'role', 'displayName', 'email', 'joinedAt'])
+        && data.userId == userId
+        && data.role == 'owner'
+        && data.displayName is string
+        && data.displayName.size() >= 1
+        && data.displayName.size() <= 100
+        && data.email is string
+        && data.joinedAt == request.time;
+    }
+
+    function validManagedProfile(data, familyId) {
+      return data.keys().hasAll([
+          'familyId',
+          'firstName',
+          'relationship',
+          'managed',
+          'createdBy',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'familyId',
+          'firstName',
+          'relationship',
+          'managed',
+          'createdBy',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.familyId == familyId
+        && data.firstName is string
+        && data.firstName.size() >= 2
+        && data.firstName.size() <= 80
+        && data.relationship in ['My child', 'Grandchild', 'Other']
+        && data.managed == true
+        && data.createdBy == request.auth.uid
+        && data.createdAt == request.time
+        && data.updatedAt == request.time;
+    }
+
+    match /users/{userId} {
+      allow read: if isSelf(userId);
+
+      allow create: if isSelf(userId)
+        && request.resource.data.keys().hasAll([
+          'userId',
+          'displayName',
+          'email',
+          'familyId',
+          'activeProfileId',
+          'onboardingComplete',
+          'createdAt',
+          'updatedAt'
+        ])
+        && request.resource.data.keys().hasOnly([
+          'userId',
+          'displayName',
+          'email',
+          'familyId',
+          'activeProfileId',
+          'onboardingComplete',
+          'createdAt',
+          'updatedAt'
+        ])
+        && request.resource.data.userId == userId
+        && request.resource.data.displayName is string
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.familyId is string
+        && request.resource.data.activeProfileId == null
+        && request.resource.data.onboardingComplete == false
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+
+      allow update: if isSelf(userId)
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.familyId == resource.data.familyId
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['activeProfileId', 'onboardingComplete', 'updatedAt'])
+        && request.resource.data.activeProfileId is string
+        && request.resource.data.onboardingComplete == true
+        && request.resource.data.updatedAt == request.time;
+
+      allow delete: if false;
+
+      match /consents/{consentId} {
+        allow read: if isSelf(userId);
+        allow create: if isSelf(userId)
+          && request.resource.data.keys().hasAll(['userId', 'version', 'guardianConfirmed', 'source', 'acceptedAt'])
+          && request.resource.data.keys().hasOnly(['userId', 'version', 'guardianConfirmed', 'source', 'acceptedAt'])
+          && request.resource.data.userId == userId
+          && request.resource.data.version == consentId
+          && request.resource.data.guardianConfirmed == true
+          && request.resource.data.source == 'onboarding'
+          && request.resource.data.acceptedAt == request.time;
+        allow update, delete: if false;
+      }
+    }
+
+    match /families/{familyId} {
+      allow create: if verifiedParent() && validFamily(request.resource.data);
+      allow read: if isFamilyMember(familyId);
+      allow update: if isFamilyOwner(familyId)
+        && request.resource.data.ownerId == resource.data.ownerId
+        && request.resource.data.schemaVersion == resource.data.schemaVersion
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'updatedAt'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 2
+        && request.resource.data.name.size() <= 80
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
+
+      match /members/{memberId} {
+        allow read: if isFamilyMember(familyId);
+        allow create: if verifiedParent()
+          && memberId == request.auth.uid
+          && getAfter(/databases/$(database)/documents/families/$(familyId)).data.ownerId == request.auth.uid
+          && validOwnerMember(request.resource.data, memberId);
+        allow update, delete: if false;
+      }
+
+      match /profiles/{profileId} {
+        allow read: if isFamilyMember(familyId);
+        allow create: if isFamilyManager(familyId) && validManagedProfile(request.resource.data, familyId);
+        allow update: if isFamilyManager(familyId)
+          && request.resource.data.familyId == resource.data.familyId
+          && request.resource.data.createdBy == resource.data.createdBy
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if false;
+      }
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

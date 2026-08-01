@@ -1,18 +1,20 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "LifeBook",
+    "slug": "lifebook",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "mobile",
-    "userInterfaceStyle": "automatic",
+    "scheme": "lifebook",
+    "userInterfaceStyle": "light",
     "ios": {
+      "bundleIdentifier": "com.thecityismine.lifebook.dev",
       "icon": "./assets/expo.icon"
     },
     "android": {
+      "package": "com.thecityismine.lifebook.dev",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#F7F8FC",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -28,7 +30,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#F7F8FC",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }

@@ -1,6 +1,7 @@
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 import { AppColors } from '@/constants/theme';
 import { AuthProvider, useAuthSession } from '@/providers/auth-provider';
@@ -56,6 +57,15 @@ function AppNavigator() {
     }
   }, [firstSegment, initializing, router, setup, setupLoading, user]);
 
+  if ((initializing || setupLoading) && !publicRoutes.has(firstSegment)) {
+    return (
+      <View style={styles.privateLoading}>
+        <ActivityIndicator color={AppColors.violet} />
+        <Text style={styles.privateLoadingText}>Opening your private LifeBook…</Text>
+      </View>
+    );
+  }
+
   return (
     <>
       <StatusBar style="dark" />
@@ -80,6 +90,21 @@ function AppNavigator() {
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  privateLoading: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    backgroundColor: AppColors.cloud,
+  },
+  privateLoadingText: {
+    color: AppColors.inkMuted,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+});
 
 export default function RootLayout() {
   return (

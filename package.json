@@ -43,6 +43,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "vercel-build": "expo export --platform web",
     "test:e2e:phase1": "node scripts/phase1-browser-smoke.mjs",
     "lint": "expo lint"
   },

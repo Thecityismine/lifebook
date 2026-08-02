@@ -5,6 +5,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 import { AppColors } from '@/constants/theme';
 import { AuthProvider, useAuthSession } from '@/providers/auth-provider';
+import { ReminderNotificationProvider } from '@/providers/reminder-notification-provider';
 
 const publicRoutes = new Set(['index', 'sign-in', 'consent', 'create-account', 'delete-account', 'privacy-policy', 'join-family']);
 const alwaysAccessibleRoutes = new Set(['delete-account', 'privacy-policy', 'join-family', 'verify-email']);
@@ -21,6 +22,7 @@ const protectedDetailRoutes = new Set([
   'edit-reminder',
   'privacy',
   'family-access',
+  'notification-settings',
 ]);
 
 function AppNavigator() {
@@ -113,6 +115,7 @@ function AppNavigator() {
         <Stack.Screen name="edit-reminder" />
         <Stack.Screen name="privacy" />
         <Stack.Screen name="family-access" />
+        <Stack.Screen name="notification-settings" />
         <Stack.Screen name="join-family" />
         <Stack.Screen name="delete-account" />
         <Stack.Screen name="privacy-policy" />
@@ -139,7 +142,9 @@ const styles = StyleSheet.create({
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <AppNavigator />
+      <ReminderNotificationProvider>
+        <AppNavigator />
+      </ReminderNotificationProvider>
     </AuthProvider>
   );
 }

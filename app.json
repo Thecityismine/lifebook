@@ -43,7 +43,14 @@
           "microphonePermission": false
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      [
+        "expo-notifications",
+        {
+          "color": "#6C5CE7",
+          "defaultChannel": "lifebook-reminders"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

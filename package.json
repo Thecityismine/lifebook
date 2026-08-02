@@ -15,6 +15,7 @@
     "expo-image": "~57.0.1",
     "expo-image-picker": "~57.0.7",
     "expo-linking": "~57.0.4",
+    "expo-notifications": "~57.0.8",
     "expo-router": "~57.0.9",
     "expo-sharing": "~57.0.8",
     "expo-splash-screen": "~57.0.5",
@@ -52,6 +53,7 @@
     "test:e2e:protected-routes": "node scripts/protected-routes-browser-smoke.mjs",
     "test:e2e:privacy-public": "node scripts/privacy-public-browser-smoke.mjs",
     "test:functions": "npm --prefix functions test",
+    "test:notifications": "node --experimental-strip-types --test tests/reminder-notification-policy.test.mjs",
     "test:rules:people": "firebase emulators:exec --only firestore,storage \"node --test tests/firestore.people.rules.test.mjs\"",
     "test:rules": "firebase emulators:exec --only firestore,storage \"node --test tests/firestore.people.rules.test.mjs\"",
     "lint": "expo lint"

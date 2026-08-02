@@ -14,6 +14,7 @@ const sections = [
   { title: 'Retention', body: 'Active and archived records remain until authorized deletion. Content-free deletion receipts expire after 30 days. Temporary export files use the device cache or browser download location. Provider-managed backups follow the provider lifecycle and are not accessible in LifeBook.' },
   { title: 'Recovery and support', body: 'Deletion is irreversible. Owners with other family members must transfer ownership first. Account recovery uses Firebase email/password recovery without exposing family information. Final publisher and privacy contact details will be added before public store release.' },
   { title: 'Family invitations', body: 'Invitation links expire after seven days, are bound to one verified email address, and can be revoked by the family owner. Expired invitation metadata is removed automatically. Only accepted verified members can read family records.' },
+  { title: 'Device reminder notifications', body: 'Reminder alerts are optional and scheduled locally on each opted-in iOS or Android device. Visible alerts use generic wording. LifeBook stores the opt-in preference and native schedule identifiers on the device, does not upload a push token, and does not send reminder details to a notification server.' },
 ];
 
 export default function PrivacyPolicyScreen() {

@@ -3,14 +3,26 @@ const test = require('node:test');
 
 const {
   cleanFamilyName,
+  cleanProfileName,
   familyDisplayName,
   requireAuthoritativelyVerifiedAccount,
+  validProfileRelationship,
 } = require('./family-onboarding');
 
 test('validates and normalizes family names', () => {
   assert.equal(cleanFamilyName('  Medina family  '), 'Medina family');
   assert.equal(cleanFamilyName('M'), '');
   assert.equal(cleanFamilyName('x'.repeat(81)), '');
+});
+
+test('validates managed profile onboarding input', () => {
+  assert.equal(cleanProfileName('  Riley  '), 'Riley');
+  assert.equal(cleanProfileName('R'), '');
+  assert.equal(cleanProfileName('x'.repeat(81)), '');
+  assert.equal(validProfileRelationship('My child'), true);
+  assert.equal(validProfileRelationship('Grandchild'), true);
+  assert.equal(validProfileRelationship('Other'), true);
+  assert.equal(validProfileRelationship('Owner'), false);
 });
 
 test('uses the authoritative account when the browser token has a stale verification claim', async () => {

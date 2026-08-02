@@ -1,11 +1,8 @@
 import { FirebaseError } from 'firebase/app';
 import {
-  collection,
   doc,
   getDoc,
   onSnapshot,
-  serverTimestamp,
-  writeBatch,
   type Unsubscribe,
 } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
@@ -118,41 +115,21 @@ export async function createFamilySpace(name: string): Promise<FamilyActionResul
 
 export async function createManagedProfile(firstName: string, relationship: string): Promise<FamilyActionResult> {
   const user = requireVerifiedParent();
-  const db = getFirebaseFirestore();
-  if (!user || !db) {
+  const functions = getFirebaseFunctions();
+  if (!user || !functions) {
     return { ok: false, message: unavailableMessage() };
   }
 
   try {
-    const userRef = doc(db, 'users', user.uid);
-    const userSnapshot = await getDoc(userRef);
-    const familyId = userSnapshot.exists() && typeof userSnapshot.data().familyId === 'string'
-      ? userSnapshot.data().familyId as string
-      : null;
-
-    if (!familyId) {
-      return { ok: false, message: 'Create the private family space before adding a managed profile.' };
-    }
-
-    const profileRef = doc(collection(db, 'families', familyId, 'profiles'));
-    const batch = writeBatch(db);
-    batch.set(profileRef, {
-      familyId,
-      firstName: firstName.trim(),
-      relationship,
-      managed: true,
-      createdBy: user.uid,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
-    batch.update(userRef, {
-      activeProfileId: profileRef.id,
-      onboardingComplete: true,
-      updatedAt: serverTimestamp(),
-    });
-    await batch.commit();
-
-    return { ok: true, familyId, profileId: profileRef.id };
+    const response = await httpsCallable<
+      { firstName: string; relationship: string },
+      { ok: true; familyId: string; profileId: string }
+    >(functions, 'createManagedProfile')({ firstName: firstName.trim(), relationship });
+    return {
+      ok: true,
+      familyId: response.data.familyId,
+      profileId: response.data.profileId,
+    };
   } catch (error) {
     return { ok: false, message: familyErrorMessage(error) };
   }

@@ -18,6 +18,7 @@ type AuthContextValue = {
   setupError: boolean;
   refreshUser: () => Promise<void>;
   confirmFamilyCreated: (familyId: string) => void;
+  confirmManagedProfileCreated: (familyId: string, profileId: string) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -121,9 +122,37 @@ export function AuthProvider({ children }: PropsWithChildren) {
     );
   }, [auth]);
 
+  const confirmManagedProfileCreated = useCallback((familyId: string, profileId: string) => {
+    setSetup({
+      familyId,
+      activeProfileId: profileId,
+      onboardingComplete: true,
+    });
+    setSetupError(false);
+    setSetupLoading(false);
+  }, []);
+
   const value = useMemo(
-    () => ({ user, initializing, setup, setupLoading, setupError, refreshUser, confirmFamilyCreated }),
-    [user, initializing, setup, setupLoading, setupError, refreshUser, confirmFamilyCreated],
+    () => ({
+      user,
+      initializing,
+      setup,
+      setupLoading,
+      setupError,
+      refreshUser,
+      confirmFamilyCreated,
+      confirmManagedProfileCreated,
+    }),
+    [
+      user,
+      initializing,
+      setup,
+      setupLoading,
+      setupError,
+      refreshUser,
+      confirmFamilyCreated,
+      confirmManagedProfileCreated,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

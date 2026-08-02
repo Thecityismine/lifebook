@@ -20,7 +20,9 @@ const {
 } = require('./family-collaboration');
 const {
   cleanFamilyName,
+  cleanProfileName,
   requireAuthoritativelyVerifiedAccount,
+  validProfileRelationship,
 } = require('./family-onboarding');
 
 initializeApp();
@@ -171,6 +173,89 @@ exports.createFamilySpace = onCall(
       return { ok: true, familyId: outcome.familyId };
     } catch (error) {
       logger.error('createFamilySpace failed', {
+        stage,
+        code: typeof error?.code === 'string' ? error.code : 'unknown',
+        errorType: error?.name || 'Error',
+      });
+      throw error;
+    }
+  },
+);
+
+exports.createManagedProfile = onCall(
+  { region: 'us-central1', memory: '256MiB', timeoutSeconds: 60 },
+  async (request) => {
+    let stage = 'validate-request';
+    try {
+      const firstName = cleanProfileName(request.data?.firstName);
+      const relationship = request.data?.relationship;
+      if (!firstName || !validProfileRelationship(relationship)) {
+        throw new HttpsError('invalid-argument', 'Enter a valid first name and relationship.');
+      }
+
+      stage = 'verify-account';
+      const { userId } = await requireAuthoritativelyVerifiedAccount(request, getAuth());
+      const userRef = db.doc(`users/${userId}`);
+      stage = 'write-profile';
+      const outcome = await db.runTransaction(async (transaction) => {
+        const userSnapshot = await transaction.get(userRef);
+        const familyId = userSnapshot.exists && typeof userSnapshot.get('familyId') === 'string'
+          ? userSnapshot.get('familyId').trim()
+          : '';
+        if (!familyId) {
+          throw new HttpsError('failed-precondition', 'Create the private family space before adding a managed profile.');
+        }
+
+        const familyRef = db.doc(`families/${familyId}`);
+        const memberRef = familyRef.collection('members').doc(userId);
+        const [familySnapshot, memberSnapshot] = await Promise.all([
+          transaction.get(familyRef),
+          transaction.get(memberRef),
+        ]);
+        if (!familySnapshot.exists
+          || familySnapshot.get('ownerId') !== userId
+          || !memberSnapshot.exists
+          || memberSnapshot.get('role') !== 'owner') {
+          throw new HttpsError('permission-denied', 'Only the family owner can finish this setup step.');
+        }
+
+        const existingProfileId = typeof userSnapshot.get('activeProfileId') === 'string'
+          ? userSnapshot.get('activeProfileId').trim()
+          : '';
+        if (existingProfileId && userSnapshot.get('onboardingComplete') === true) {
+          const existingProfileRef = familyRef.collection('profiles').doc(existingProfileId);
+          const existingProfileSnapshot = await transaction.get(existingProfileRef);
+          if (existingProfileSnapshot.exists
+            && existingProfileSnapshot.get('familyId') === familyId
+            && existingProfileSnapshot.get('managed') === true) {
+            return { familyId, profileId: existingProfileId, created: false };
+          }
+          throw new HttpsError('failed-precondition', 'The existing managed profile could not be verified.');
+        }
+
+        const profileRef = familyRef.collection('profiles').doc();
+        const now = Timestamp.now();
+        transaction.set(profileRef, {
+          familyId,
+          firstName,
+          relationship,
+          managed: true,
+          createdBy: userId,
+          createdAt: now,
+          updatedAt: now,
+        });
+        transaction.update(userRef, {
+          activeProfileId: profileRef.id,
+          onboardingComplete: true,
+          updatedAt: now,
+        });
+        return { familyId, profileId: profileRef.id, created: true };
+      });
+
+      logger.info('createManagedProfile completed', { created: outcome.created });
+      return { ok: true, familyId: outcome.familyId, profileId: outcome.profileId };
+    } catch (error) {
+      logger.error('createManagedProfile failed', {
         stage,
         code: typeof error?.code === 'string' ? error.code : 'unknown',
         errorType: error?.name || 'Error',

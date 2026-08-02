@@ -8,6 +8,16 @@ function cleanFamilyName(value) {
   return name.length >= 2 && name.length <= 80 ? name : '';
 }
 
+function cleanProfileName(value) {
+  if (typeof value !== 'string') return '';
+  const name = value.trim();
+  return name.length >= 2 && name.length <= 80 ? name : '';
+}
+
+function validProfileRelationship(value) {
+  return ['My child', 'Grandchild', 'Other'].includes(value);
+}
+
 function familyDisplayName(authUser, email) {
   if (typeof authUser.displayName === 'string' && authUser.displayName.trim()) {
     return authUser.displayName.trim().slice(0, 100);
@@ -35,6 +45,8 @@ async function requireAuthoritativelyVerifiedAccount(request, auth) {
 
 module.exports = {
   cleanFamilyName,
+  cleanProfileName,
   familyDisplayName,
   requireAuthoritativelyVerifiedAccount,
+  validProfileRelationship,
 };

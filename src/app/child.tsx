@@ -7,12 +7,14 @@ import { FormField } from '@/components/form-field';
 import { OnboardingShell } from '@/components/onboarding-shell';
 import { PrimaryButton } from '@/components/primary-button';
 import { AppColors, Radius, Spacing } from '@/constants/theme';
+import { useAuthSession } from '@/providers/auth-provider';
 import { createManagedProfile } from '@/services/family';
 
 const relationships = ['My child', 'Grandchild', 'Other'];
 
 export default function ChildScreen() {
   const router = useRouter();
+  const { confirmManagedProfileCreated } = useAuthSession();
   const [firstName, setFirstName] = useState('');
   const [relationship, setRelationship] = useState('My child');
   const [message, setMessage] = useState<string | null>(null);
@@ -30,6 +32,12 @@ export default function ChildScreen() {
       return;
     }
 
+    if (!result.profileId) {
+      setMessage('LifeBook could not finish the managed profile. Please try again.');
+      return;
+    }
+
+    confirmManagedProfileCreated(result.familyId, result.profileId);
     router.replace('/home');
   }
 

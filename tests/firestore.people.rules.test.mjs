@@ -292,6 +292,7 @@ test('owner can create, read, edit, complete, archive, and restore a profile rem
   }).firestore();
   const reminderRef = doc(db, 'families', familyId, 'reminders', reminderId);
 
+  await assertSucceeds(setDoc(doc(db, 'families', familyId, 'people', personId), personData()));
   await assertSucceeds(setDoc(reminderRef, reminderData()));
   await assertSucceeds(getDoc(reminderRef));
   await assertSucceeds(updateDoc(reminderRef, {
@@ -309,9 +310,13 @@ test('reminder records deny invalid-profile and cross-family access', async () =
   const ownerDb = testEnvironment.authenticatedContext(ownerId, {
     email: 'owner-a@example.com', email_verified: true,
   }).firestore();
+  await assertSucceeds(setDoc(doc(ownerDb, 'families', familyId, 'people', personId), personData()));
   await assertSucceeds(setDoc(doc(ownerDb, 'families', familyId, 'reminders', reminderId), reminderData()));
   await assertFails(setDoc(doc(ownerDb, 'families', familyId, 'reminders', 'missing-profile'), {
     ...reminderData(), profileId: 'missing-profile',
+  }));
+  await assertFails(setDoc(doc(ownerDb, 'families', familyId, 'reminders', 'missing-person'), {
+    ...reminderData(), personId: 'missing-person',
   }));
 
   const outsiderDb = testEnvironment.authenticatedContext(outsiderId, {

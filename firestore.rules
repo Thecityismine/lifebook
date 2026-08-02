@@ -312,6 +312,8 @@ service cloud.firestore {
         && data.kind in ['birthday', 'appointment', 'school', 'activity', 'milestone', 'other']
         && data.personId is string
         && data.personId.size() <= 128
+        && (data.personId == ''
+          || exists(/databases/$(database)/documents/families/$(familyId)/people/$(data.personId)))
         && (data.completedAt == null || data.completedAt is timestamp)
         && (data.archivedAt == null || data.archivedAt is timestamp)
         && data.createdBy is string

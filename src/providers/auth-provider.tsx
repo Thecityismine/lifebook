@@ -1,5 +1,5 @@
 import type { User } from 'firebase/auth';
-import { onAuthStateChanged, reload } from 'firebase/auth';
+import { onIdTokenChanged, reload } from 'firebase/auth';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type PropsWithChildren } from 'react';
 
 import { getFirebaseAuth } from '@/services/firebase';
@@ -31,7 +31,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
+    const unsubscribe = onIdTokenChanged(auth, (nextUser) => {
       setupUnsubscribe.current?.();
       setupUnsubscribe.current = null;
       setUser(nextUser);

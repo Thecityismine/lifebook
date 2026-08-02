@@ -136,6 +136,9 @@ export async function checkParentVerification(): Promise<AuthActionResult> {
 
   try {
     await reload(auth.currentUser);
+    if (auth.currentUser.emailVerified) {
+      await getIdToken(auth.currentUser, true);
+    }
     return { ok: true, emailVerified: auth.currentUser.emailVerified };
   } catch (error) {
     return { ok: false, code: 'request-failed', message: messageForFirebaseError(error, 'sign-in') };

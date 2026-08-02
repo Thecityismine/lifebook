@@ -60,8 +60,8 @@ export async function signInParent(email: string, password: string): Promise<Aut
   }
 
   try {
-    await signInWithEmailAndPassword(auth, email.trim(), password);
-    return { ok: true, emailVerified: auth.currentUser?.emailVerified ?? false };
+    const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
+    return { ok: true, emailVerified: credential.user.emailVerified };
   } catch (error) {
     return { ok: false, code: 'request-failed', message: messageForFirebaseError(error, 'sign-in') };
   }

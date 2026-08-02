@@ -22,9 +22,9 @@ export default function SignInScreen() {
     setMessage(null);
     setSubmitting(true);
     const result = await signInParent(email, password);
-    setSubmitting(false);
 
     if (!result.ok) {
+      setSubmitting(false);
       setMessage(result.message);
       return;
     }
@@ -38,9 +38,9 @@ export default function SignInScreen() {
         }
         return;
       }
-      // The root guard resolves this checkpoint to family setup, child setup,
-      // or Home after the persisted parent setup snapshot arrives.
-      router.replace('/child');
+      // Stay on this public route until AuthProvider observes the signed-in
+      // user. The root guard will then resolve family setup, child setup, or
+      // Home without briefly treating the protected route as signed out.
     } else {
       router.replace({
         pathname: '/verify-email',

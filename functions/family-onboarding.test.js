@@ -5,6 +5,7 @@ const {
   cleanFamilyName,
   cleanProfileName,
   familyDisplayName,
+  parentSetupFromData,
   requireAuthoritativelyVerifiedAccount,
   validProfileRelationship,
 } = require('./family-onboarding');
@@ -23,6 +24,20 @@ test('validates managed profile onboarding input', () => {
   assert.equal(validProfileRelationship('Grandchild'), true);
   assert.equal(validProfileRelationship('Other'), true);
   assert.equal(validProfileRelationship('Owner'), false);
+});
+
+test('returns only the setup fields needed by the client', () => {
+  assert.deepEqual(parentSetupFromData({
+    familyId: ' family-1 ',
+    activeProfileId: ' profile-1 ',
+    onboardingComplete: true,
+    email: 'private@example.com',
+  }), {
+    familyId: 'family-1',
+    activeProfileId: 'profile-1',
+    onboardingComplete: true,
+  });
+  assert.equal(parentSetupFromData(null), null);
 });
 
 test('uses the authoritative account when the browser token has a stale verification claim', async () => {

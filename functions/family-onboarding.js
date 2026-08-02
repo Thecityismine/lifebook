@@ -18,6 +18,22 @@ function validProfileRelationship(value) {
   return ['My child', 'Grandchild', 'Other'].includes(value);
 }
 
+function parentSetupFromData(data) {
+  if (!data || typeof data !== 'object') {
+    return null;
+  }
+
+  return {
+    familyId: typeof data.familyId === 'string' && data.familyId.trim()
+      ? data.familyId.trim()
+      : null,
+    activeProfileId: typeof data.activeProfileId === 'string' && data.activeProfileId.trim()
+      ? data.activeProfileId.trim()
+      : null,
+    onboardingComplete: data.onboardingComplete === true,
+  };
+}
+
 function familyDisplayName(authUser, email) {
   if (typeof authUser.displayName === 'string' && authUser.displayName.trim()) {
     return authUser.displayName.trim().slice(0, 100);
@@ -47,6 +63,7 @@ module.exports = {
   cleanFamilyName,
   cleanProfileName,
   familyDisplayName,
+  parentSetupFromData,
   requireAuthoritativelyVerifiedAccount,
   validProfileRelationship,
 };

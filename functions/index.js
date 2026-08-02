@@ -21,6 +21,7 @@ const {
 const {
   cleanFamilyName,
   cleanProfileName,
+  parentSetupFromData,
   requireAuthoritativelyVerifiedAccount,
   validProfileRelationship,
 } = require('./family-onboarding');
@@ -85,6 +86,31 @@ async function resolveInvite(token, email) {
 function auditEvent(familyId, eventType, actorId, summary, createdAt = Timestamp.now()) {
   return { familyId, eventType, actorId, summary, schemaVersion: 1, createdAt };
 }
+
+exports.getParentSetup = onCall(
+  { region: 'us-central1', memory: '256MiB', timeoutSeconds: 30 },
+  async (request) => {
+    let stage = 'verify-account';
+    try {
+      const { userId } = await requireAuthoritativelyVerifiedAccount(request, getAuth());
+      stage = 'read-setup';
+      const userSnapshot = await db.doc(`users/${userId}`).get();
+      const setup = userSnapshot.exists ? parentSetupFromData(userSnapshot.data()) : null;
+      logger.info('getParentSetup completed', {
+        found: setup !== null,
+        complete: setup?.onboardingComplete === true,
+      });
+      return { ok: true, setup };
+    } catch (error) {
+      logger.error('getParentSetup failed', {
+        stage,
+        code: typeof error?.code === 'string' ? error.code : 'unknown',
+        errorType: error?.name || 'Error',
+      });
+      throw error;
+    }
+  },
+);
 
 exports.createFamilySpace = onCall(
   { region: 'us-central1', memory: '256MiB', timeoutSeconds: 60 },

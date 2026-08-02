@@ -3,7 +3,7 @@ import { onIdTokenChanged, reload } from 'firebase/auth';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type PropsWithChildren } from 'react';
 
 import { getFirebaseAuth } from '@/services/firebase';
-import { subscribeToParentSetup, type ParentSetup } from '@/services/family';
+import { loadParentSetup, subscribeToParentSetup, type ParentSetup } from '@/services/family';
 import {
   authSetupIdentity,
   reconcileConfirmedSetup,
@@ -25,6 +25,8 @@ type AuthContextValue = {
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+const SETUP_FALLBACK_DELAY_MS = 1500;
+const SETUP_LOAD_DEADLINE_MS = 12000;
 
 export function AuthProvider({ children }: PropsWithChildren) {
   const auth = useMemo(() => getFirebaseAuth(), []);
@@ -43,40 +45,109 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setupUnsubscribe.current?.();
     const revision = ++setupSubscriptionRevision.current;
     let observedLiveSetup = false;
+    let initialSetupResolved = false;
+    let fallbackStarted = false;
+    let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
+    let deadlineTimer: ReturnType<typeof setTimeout> | null = null;
+    let unsubscribeLiveSetup: () => void = () => undefined;
+
+    const isCurrentSubscription = () => revision === setupSubscriptionRevision.current;
+    const clearInitialTimers = () => {
+      if (fallbackTimer) {
+        clearTimeout(fallbackTimer);
+        fallbackTimer = null;
+      }
+      if (deadlineTimer) {
+        clearTimeout(deadlineTimer);
+        deadlineTimer = null;
+      }
+    };
+
+    const applySetup = (nextSetup: ParentSetup | null, source: 'cache' | 'firestore' | 'function') => {
+      if (!isCurrentSubscription()) {
+        return;
+      }
+
+      const wasInitialResolution = !initialSetupResolved;
+      initialSetupResolved = true;
+      clearInitialTimers();
+      const reconciliation = reconcileConfirmedSetup(nextSetup, setupConfirmation.current);
+      setupConfirmation.current = reconciliation.pendingConfirmation;
+      setSetup(reconciliation.setup);
+      setSetupError(false);
+      setSetupLoading(false);
+      void writeCachedParentSetup(userId, reconciliation.setup);
+
+      if (wasInitialResolution) {
+        console.info('[auth-setup] Parent setup resolved.', {
+          source,
+          found: reconciliation.setup !== null,
+          complete: reconciliation.setup?.onboardingComplete === true,
+        });
+      }
+    };
+
+    const resolveWithFunction = async (trigger: string) => {
+      if (!isCurrentSubscription() || initialSetupResolved || fallbackStarted) {
+        return;
+      }
+
+      fallbackStarted = true;
+      console.warn('[auth-setup] Using HTTPS setup fallback.', { trigger });
+      const result = await loadParentSetup();
+      if (!isCurrentSubscription() || initialSetupResolved) {
+        return;
+      }
+      if (result.ok) {
+        applySetup(result.setup, 'function');
+        return;
+      }
+      console.warn('[auth-setup] HTTPS setup fallback failed.', { code: result.code });
+    };
+
+    fallbackTimer = setTimeout(() => {
+      void resolveWithFunction('firestore-timeout');
+    }, SETUP_FALLBACK_DELAY_MS);
+    deadlineTimer = setTimeout(() => {
+      if (!isCurrentSubscription() || initialSetupResolved) {
+        return;
+      }
+      console.warn('[auth-setup] Parent setup load deadline exceeded.');
+      setSetupError(true);
+      setSetupLoading(false);
+    }, SETUP_LOAD_DEADLINE_MS);
 
     if (useCachedSetup) {
       void readCachedParentSetup(userId).then((cachedSetup) => {
-        if (revision !== setupSubscriptionRevision.current || observedLiveSetup || !cachedSetup) {
+        if (!isCurrentSubscription() || observedLiveSetup || initialSetupResolved || !cachedSetup) {
           return;
         }
-        setSetup((currentSetup) => currentSetup ?? cachedSetup);
-        setSetupLoading(false);
+        applySetup(cachedSetup, 'cache');
       });
     }
 
-    setupUnsubscribe.current = subscribeToParentSetup(
+    unsubscribeLiveSetup = subscribeToParentSetup(
       userId,
       (nextSetup) => {
-        if (revision !== setupSubscriptionRevision.current) {
+        if (!isCurrentSubscription()) {
           return;
         }
         observedLiveSetup = true;
-        const reconciliation = reconcileConfirmedSetup(nextSetup, setupConfirmation.current);
-        setupConfirmation.current = reconciliation.pendingConfirmation;
-        setSetup(reconciliation.setup);
-        setSetupError(false);
-        setSetupLoading(false);
-        void writeCachedParentSetup(userId, reconciliation.setup);
+        applySetup(nextSetup, 'firestore');
       },
       (code) => {
-        if (revision !== setupSubscriptionRevision.current) {
+        if (!isCurrentSubscription()) {
           return;
         }
-        console.warn('[auth-setup] Unable to load parent setup.', { code });
-        setSetupError(true);
-        setSetupLoading(false);
+        console.warn('[auth-setup] Firestore setup listener failed.', { code });
+        void resolveWithFunction(code);
       },
     );
+
+    setupUnsubscribe.current = () => {
+      clearInitialTimers();
+      unsubscribeLiveSetup();
+    };
   }, []);
 
   useEffect(() => {

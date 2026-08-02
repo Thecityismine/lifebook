@@ -7,8 +7,8 @@ import {
 } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 
-import { getFirebaseAuth, getFirebaseFirestore, getFirebaseFunctions } from '@/services/firebase';
 import { isConfirmedSetupMissing } from '@/services/auth-flow-policy';
+import { getFirebaseAuth, getFirebaseFirestore, getFirebaseFunctions } from '@/services/firebase';
 
 export type ParentSetup = {
   familyId: string | null;
@@ -24,6 +24,10 @@ export type FamilySummary = {
 export type FamilyActionResult =
   | { ok: true; familyId: string; profileId?: string }
   | { ok: false; message: string };
+
+export type ParentSetupLoadResult =
+  | { ok: true; setup: ParentSetup | null }
+  | { ok: false; code: string };
 
 function unavailableMessage() {
   return 'Your private family space is not available right now. Please try again.';
@@ -64,6 +68,46 @@ function requireVerifiedParent() {
   return user;
 }
 
+function parentSetupFromValue(value: Record<string, unknown>): ParentSetup {
+  return {
+    familyId: typeof value.familyId === 'string' && value.familyId.trim()
+      ? value.familyId.trim()
+      : null,
+    activeProfileId: typeof value.activeProfileId === 'string' && value.activeProfileId.trim()
+      ? value.activeProfileId.trim()
+      : null,
+    onboardingComplete: value.onboardingComplete === true,
+  };
+}
+
+export async function loadParentSetup(): Promise<ParentSetupLoadResult> {
+  const user = requireVerifiedParent();
+  const functions = getFirebaseFunctions();
+  if (!user || !functions) {
+    return { ok: false, code: 'functions/not-configured' };
+  }
+
+  try {
+    const response = await httpsCallable<
+      Record<string, never>,
+      { ok: true; setup: Record<string, unknown> | null }
+    >(functions, 'getParentSetup')({});
+    const value = response.data.setup;
+    if (value === null) {
+      return { ok: true, setup: null };
+    }
+    if (!value || typeof value !== 'object') {
+      return { ok: false, code: 'functions/invalid-response' };
+    }
+    return { ok: true, setup: parentSetupFromValue(value) };
+  } catch (error) {
+    return {
+      ok: false,
+      code: error instanceof FirebaseError ? error.code : 'functions/unknown',
+    };
+  }
+}
+
 export function subscribeToParentSetup(
   userId: string,
   onValue: (setup: ParentSetup | null) => void,
@@ -89,12 +133,7 @@ export function subscribeToParentSetup(
         return;
       }
 
-      const data = snapshot.data();
-      onValue({
-        familyId: typeof data.familyId === 'string' ? data.familyId : null,
-        activeProfileId: typeof data.activeProfileId === 'string' ? data.activeProfileId : null,
-        onboardingComplete: data.onboardingComplete === true,
-      });
+      onValue(parentSetupFromValue(snapshot.data()));
     },
     (error) => onError(error.code),
   );

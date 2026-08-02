@@ -22,10 +22,14 @@ try {
   await page.getByText('Data practices & retention', { exact: true }).waitFor();
   await page.getByText('Private by design', { exact: true }).waitFor();
 
+  await page.goto(`${baseUrl}/join-family?token=family_12345.invite_12345.secret_1234567890`, { waitUntil: 'networkidle' });
+  await page.getByText('Join a private family LifeBook', { exact: true }).waitFor();
+  await page.getByText('Sign in to continue', { exact: true }).waitFor();
+
   if (browserErrors.length > 0) {
     throw new Error(`Browser reported ${browserErrors.length} error(s): ${browserErrors.join(' | ')}`);
   }
-  console.log('Public privacy routes browser smoke test passed (2 routes).');
+  console.log('Public privacy and invitation routes browser smoke test passed (3 routes).');
 } finally {
   await browser.close();
 }

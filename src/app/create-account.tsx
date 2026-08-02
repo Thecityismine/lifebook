@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -10,6 +10,8 @@ import { createParentAccount } from '@/services/auth';
 
 export default function CreateAccountScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ returnTo?: string; token?: string }>();
+  const joiningFamily = params.returnTo === '/join-family' && typeof params.token === 'string';
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -35,7 +37,11 @@ export default function CreateAccountScreen() {
 
     router.push({
       pathname: '/verify-email',
-      params: { email: email.trim(), sent: result.verificationSent === false ? '0' : '1' },
+      params: {
+        email: email.trim(),
+        sent: result.verificationSent === false ? '0' : '1',
+        ...(joiningFamily ? { returnTo: '/join-family', token: params.token } : {}),
+      },
     });
   }
 
@@ -43,7 +49,9 @@ export default function CreateAccountScreen() {
     <OnboardingShell
       eyebrow="Parent account"
       title="Create your secure parent sign-in"
-      subtitle="This account will own the private family space. We’ll send an email to verify the address before setup continues."
+      subtitle={joiningFamily
+        ? 'This verified adult account will use the invitation to join an existing private family space.'
+        : 'This account will own the private family space. We’ll send an email to verify the address before setup continues.'}
       onBack={() => router.back()}
       step={2}
       totalSteps={5}

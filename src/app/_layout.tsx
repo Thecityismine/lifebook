@@ -6,8 +6,8 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { AppColors } from '@/constants/theme';
 import { AuthProvider, useAuthSession } from '@/providers/auth-provider';
 
-const publicRoutes = new Set(['index', 'sign-in', 'consent', 'create-account', 'delete-account', 'privacy-policy']);
-const alwaysAccessibleRoutes = new Set(['delete-account', 'privacy-policy']);
+const publicRoutes = new Set(['index', 'sign-in', 'consent', 'create-account', 'delete-account', 'privacy-policy', 'join-family']);
+const alwaysAccessibleRoutes = new Set(['delete-account', 'privacy-policy', 'join-family', 'verify-email']);
 const protectedDetailRoutes = new Set([
   'person',
   'edit-person',
@@ -20,6 +20,7 @@ const protectedDetailRoutes = new Set([
   'reminder',
   'edit-reminder',
   'privacy',
+  'family-access',
 ]);
 
 function AppNavigator() {
@@ -111,6 +112,8 @@ function AppNavigator() {
         <Stack.Screen name="reminder" />
         <Stack.Screen name="edit-reminder" />
         <Stack.Screen name="privacy" />
+        <Stack.Screen name="family-access" />
+        <Stack.Screen name="join-family" />
         <Stack.Screen name="delete-account" />
         <Stack.Screen name="privacy-policy" />
       </Stack>

@@ -33,3 +33,4 @@ The data models are documented in:
 - [`docs/phase4-chapters-model.md`](docs/phase4-chapters-model.md)
 - [`docs/phase5-reminders-model.md`](docs/phase5-reminders-model.md)
 - [`docs/phase6-privacy-account-lifecycle.md`](docs/phase6-privacy-account-lifecycle.md)
+- [`docs/phase7-family-collaboration.md`](docs/phase7-family-collaboration.md)

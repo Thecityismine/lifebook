@@ -7,6 +7,7 @@ const projectId = 'lifebook-31782';
 const ownerId = 'owner-a';
 const outsiderId = 'owner-b';
 const guardianId = 'guardian-a';
+const memberId = 'member-a';
 const familyId = 'family-a';
 const outsiderFamilyId = 'family-b';
 const profileId = 'profile-a';
@@ -125,6 +126,15 @@ beforeEach(async () => {
       setDoc(doc(db, 'families', familyId, 'members', guardianId), {
         userId: guardianId, role: 'guardian', displayName: 'Guardian A', email: 'guardian-a@example.com', joinedAt: new Date(),
       }),
+      setDoc(doc(db, 'families', familyId, 'members', memberId), {
+        userId: memberId, role: 'member', displayName: 'Viewer A', email: 'viewer-a@example.com', joinedAt: new Date(),
+      }),
+      setDoc(doc(db, 'families', familyId, 'invites', 'invite-a'), {
+        familyId, inviteId: 'invite-a', email: 'guest@example.com', emailLower: 'guest@example.com',
+        role: 'guardian', status: 'pending', tokenHash: 'a'.repeat(64), createdBy: ownerId,
+        createdAt: new Date(), expiresAt: new Date(Date.now() + 86400000), acceptedBy: null,
+        acceptedAt: null, revokedAt: null, schemaVersion: 1,
+      }),
       setDoc(doc(db, 'families', familyId, 'profiles', profileId), {
         familyId, firstName: 'Sam', relationship: 'My child', managed: true,
         createdBy: ownerId, createdAt: new Date(), updatedAt: new Date(),
@@ -218,6 +228,26 @@ test('photo storage accepts family images and denies invalid or cross-family acc
   await assertFails(outsiderStorage.ref(photoRef.fullPath).getMetadata());
   await assertFails(outsiderStorage.ref(`families/${familyId}/people/${personId}/intruder.jpg`)
     .putString('intruder photo', 'raw', { contentType: 'image/jpeg' }));
+});
+
+test('guardian photo uploads follow the owner editing setting', async () => {
+  const ownerDb = testEnvironment.authenticatedContext(ownerId, {
+    email: 'owner-a@example.com', email_verified: true,
+  }).firestore();
+  const settingsRef = doc(ownerDb, 'families', familyId, 'settings', 'privacy');
+  await assertSucceeds(setDoc(settingsRef, privacySettingsData(false)));
+
+  const guardianStorage = testEnvironment.authenticatedContext(guardianId, {
+    email: 'guardian-a@example.com', email_verified: true,
+  }).storage('gs://lifebook-31782.firebasestorage.app');
+  const blockedRef = guardianStorage.ref(`families/${familyId}/people/${personId}/blocked.jpg`);
+  await assertFails(blockedRef.putString('blocked photo', 'raw', { contentType: 'image/jpeg' }));
+
+  await assertSucceeds(updateDoc(settingsRef, {
+    guardianCanEdit: true, updatedBy: ownerId, updatedAt: serverTimestamp(),
+  }));
+  const allowedRef = guardianStorage.ref(`families/${familyId}/people/${personId}/allowed.jpg`);
+  await assertSucceeds(allowedRef.putString('allowed photo', 'raw', { contentType: 'image/jpeg' }));
 });
 
 test('owner can create, read, edit, archive, and restore a profile memory', async () => {
@@ -398,4 +428,31 @@ test('privacy settings enforce guardian editing and deny cross-family control', 
     email: 'owner-b@example.com', email_verified: true,
   }).firestore();
   await assertFails(getDoc(doc(outsiderDb, 'families', familyId, 'settings', 'privacy')));
+});
+
+test('only owners can inspect invitations and invite writes stay server-controlled', async () => {
+  const ownerDb = testEnvironment.authenticatedContext(ownerId, {
+    email: 'owner-a@example.com', email_verified: true,
+  }).firestore();
+  const inviteRef = doc(ownerDb, 'families', familyId, 'invites', 'invite-a');
+  await assertSucceeds(getDoc(inviteRef));
+  await assertFails(updateDoc(inviteRef, { status: 'revoked' }));
+  await assertFails(deleteDoc(inviteRef));
+
+  const guardianDb = testEnvironment.authenticatedContext(guardianId, {
+    email: 'guardian-a@example.com', email_verified: true,
+  }).firestore();
+  await assertFails(getDoc(doc(guardianDb, 'families', familyId, 'invites', 'invite-a')));
+});
+
+test('viewer members can read family content but cannot create or change it', async () => {
+  const memberDb = testEnvironment.authenticatedContext(memberId, {
+    email: 'viewer-a@example.com', email_verified: true,
+  }).firestore();
+  await assertSucceeds(getDoc(doc(memberDb, 'families', familyId)));
+  await assertSucceeds(getDoc(doc(memberDb, 'families', familyId, 'profiles', profileId)));
+  await assertFails(setDoc(doc(memberDb, 'families', familyId, 'people', 'viewer-person'), {
+    ...personData(), createdBy: memberId,
+  }));
+  await assertFails(updateDoc(doc(memberDb, 'families', familyId), { name: 'Changed by viewer' }));
 });

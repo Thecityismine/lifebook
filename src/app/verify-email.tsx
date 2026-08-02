@@ -12,7 +12,8 @@ import { checkParentVerification, resendParentVerification, signOutParent } from
 export default function VerifyEmailScreen() {
   const router = useRouter();
   const { refreshUser } = useAuthSession();
-  const params = useLocalSearchParams<{ email?: string; sent?: string }>();
+  const params = useLocalSearchParams<{ email?: string; sent?: string; returnTo?: string; token?: string }>();
+  const joiningFamily = params.returnTo === '/join-family' && typeof params.token === 'string';
   const [message, setMessage] = useState(
     params.sent === '0' ? 'The account was created, but the verification email could not be sent. Try again below.' : null,
   );
@@ -36,7 +37,11 @@ export default function VerifyEmailScreen() {
     }
 
     await refreshUser();
-    router.replace('/family');
+    if (joiningFamily) {
+      router.replace({ pathname: '/join-family', params: { token: params.token } });
+    } else {
+      router.replace('/family');
+    }
   }
 
   async function handleResend() {

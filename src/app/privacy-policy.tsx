@@ -6,13 +6,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppColors, FontFamily, MaxContentWidth, Radius, Shadow, Spacing } from '@/constants/theme';
 
 const sections = [
-  { title: 'Information LifeBook keeps', body: 'Account identity and authentication status; family membership and managed profiles; people, relationships, memories, chapters, reminders, consent records, privacy settings, audit events, and selected photos.' },
+  { title: 'Information LifeBook keeps', body: 'Account identity and authentication status; family membership, expiring invitation metadata, and managed profiles; people, relationships, memories, chapters, reminders, consent records, privacy settings, audit events, and selected photos.' },
   { title: 'How information is used', body: 'Information is used only to provide the private family archive, synchronize it across authorized devices, enforce family permissions, create exports, and complete account-lifecycle requests.' },
   { title: 'Service providers', body: 'Firebase provides Authentication, Firestore, Cloud Storage, and privileged deletion functions. Vercel hosts the static web experience. LifeBook does not include advertising, social-media, data-broker, or behavioral-tracking SDKs.' },
   { title: 'Visibility and child safety', body: 'Protected records are family-only. LifeBook has no public profiles, followers, public discovery, direct messaging, or precise-location collection. Managed child profiles cannot grant permissions.' },
   { title: 'Export and deletion', body: 'A verified account holder can export family data as machine-readable JSON. Account deletion requires recent password confirmation and covers Authentication, user records, family records controlled by a sole owner, and private family media.' },
   { title: 'Retention', body: 'Active and archived records remain until authorized deletion. Content-free deletion receipts expire after 30 days. Temporary export files use the device cache or browser download location. Provider-managed backups follow the provider lifecycle and are not accessible in LifeBook.' },
   { title: 'Recovery and support', body: 'Deletion is irreversible. Owners with other family members must transfer ownership first. Account recovery uses Firebase email/password recovery without exposing family information. Final publisher and privacy contact details will be added before public store release.' },
+  { title: 'Family invitations', body: 'Invitation links expire after seven days, are bound to one verified email address, and can be revoked by the family owner. Expired invitation metadata is removed automatically. Only accepted verified members can read family records.' },
 ];
 
 export default function PrivacyPolicyScreen() {

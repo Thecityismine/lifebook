@@ -106,6 +106,7 @@ export async function createFamilySpace(name: string): Promise<FamilyActionResul
       const familyRef = existingFamilyId ? doc(db, 'families', existingFamilyId) : doc(collection(db, 'families'));
       const memberRef = doc(db, 'families', familyRef.id, 'members', user.uid);
       const consentRef = doc(db, 'users', user.uid, 'consents', PARENT_CONSENT_VERSION);
+      const consentSnapshot = await transaction.get(consentRef);
 
       if (existingFamilyId) {
         transaction.update(familyRef, { name: cleanName, updatedAt: serverTimestamp() });
@@ -136,13 +137,15 @@ export async function createFamilySpace(name: string): Promise<FamilyActionResul
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
-      transaction.set(consentRef, {
-        userId: user.uid,
-        version: PARENT_CONSENT_VERSION,
-        guardianConfirmed: true,
-        source: PARENT_CONSENT_SOURCE,
-        acceptedAt: serverTimestamp(),
-      });
+      if (!consentSnapshot.exists()) {
+        transaction.set(consentRef, {
+          userId: user.uid,
+          version: PARENT_CONSENT_VERSION,
+          guardianConfirmed: true,
+          source: PARENT_CONSENT_SOURCE,
+          acceptedAt: serverTimestamp(),
+        });
+      }
 
       return familyRef.id;
     });

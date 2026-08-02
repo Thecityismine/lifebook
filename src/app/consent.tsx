@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -15,6 +15,8 @@ const safeguards = [
 
 export default function ConsentScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ returnTo?: string; token?: string }>();
+  const joiningFamily = params.returnTo === '/join-family' && typeof params.token === 'string';
   const [confirmed, setConfirmed] = useState(false);
 
   return (
@@ -25,7 +27,9 @@ export default function ConsentScreen() {
       onBack={() => router.back()}
       step={1}
       totalSteps={5}
-      footer={<PrimaryButton label="Continue" disabled={!confirmed} onPress={() => router.push('/create-account')} />}>
+      footer={<PrimaryButton label="Continue" disabled={!confirmed} onPress={() => joiningFamily
+        ? router.push({ pathname: '/create-account', params: { returnTo: '/join-family', token: params.token } })
+        : router.push('/create-account')} />}>
       <View style={styles.list}>
         {safeguards.map((item) => (
           <View key={item.title} style={styles.safeguard}>

@@ -13,7 +13,7 @@ function deletionMode(role, memberCount) {
   if (role === 'owner') {
     return memberCount <= 1 ? 'family' : 'transfer-required';
   }
-  if (role === 'guardian') {
+  if (role === 'guardian' || role === 'member') {
     return 'membership';
   }
   return 'denied';

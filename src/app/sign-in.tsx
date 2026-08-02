@@ -10,8 +10,8 @@ import { signInParent } from '@/services/auth';
 
 export default function SignInScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ returnTo?: string }>();
-  const returnTo = params.returnTo === '/delete-account' ? '/delete-account' : '';
+  const params = useLocalSearchParams<{ returnTo?: string; token?: string }>();
+  const returnTo = params.returnTo === '/delete-account' || params.returnTo === '/join-family' ? params.returnTo : '';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState<string | null>(null);
@@ -31,14 +31,26 @@ export default function SignInScreen() {
 
     if (result.emailVerified) {
       if (returnTo) {
-        router.replace(returnTo);
+        if (returnTo === '/join-family' && typeof params.token === 'string') {
+          router.replace({ pathname: '/join-family', params: { token: params.token } });
+        } else {
+          router.replace('/delete-account');
+        }
         return;
       }
       // The root guard resolves this checkpoint to family setup, child setup,
       // or Home after the persisted parent setup snapshot arrives.
       router.replace('/child');
     } else {
-      router.replace({ pathname: '/verify-email', params: { email: email.trim() } });
+      router.replace({
+        pathname: '/verify-email',
+        params: {
+          email: email.trim(),
+          ...(returnTo === '/join-family' && typeof params.token === 'string'
+            ? { returnTo: '/join-family', token: params.token }
+            : {}),
+        },
+      });
     }
   }
 

@@ -15,6 +15,7 @@ test('deletion planning protects families with multiple members', () => {
   assert.equal(deletionMode('owner', 1), 'family');
   assert.equal(deletionMode('owner', 2), 'transfer-required');
   assert.equal(deletionMode('guardian', 2), 'membership');
+  assert.equal(deletionMode('member', 2), 'membership');
   assert.equal(deletionMode('viewer', 2), 'denied');
 });
 

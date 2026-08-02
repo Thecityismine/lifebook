@@ -10,13 +10,20 @@ service firebase.storage {
       return /databases/(default)/documents/families/$(familyId)/members/$(request.auth.uid);
     }
 
+    function privacySettingsPath(familyId) {
+      return /databases/(default)/documents/families/$(familyId)/settings/privacy;
+    }
+
     function isFamilyMember(familyId) {
       return verifiedParent() && firestore.exists(memberPath(familyId));
     }
 
     function isFamilyManager(familyId) {
       return isFamilyMember(familyId)
-        && firestore.get(memberPath(familyId)).data.role in ['owner', 'guardian'];
+        && (firestore.get(memberPath(familyId)).data.role == 'owner'
+          || (firestore.get(memberPath(familyId)).data.role == 'guardian'
+            && (!firestore.exists(privacySettingsPath(familyId))
+              || firestore.get(privacySettingsPath(familyId)).data.guardianCanEdit == true)));
     }
 
     match /families/{familyId}/people/{personId}/{fileName} {

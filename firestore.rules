@@ -354,7 +354,15 @@ service cloud.firestore {
           'familyId', 'eventType', 'actorId', 'summary', 'schemaVersion', 'createdAt'
         ])
         && data.familyId == familyId
-        && data.eventType in ['privacy_settings_updated', 'member_role_changed', 'ownership_transferred']
+        && data.eventType in [
+          'privacy_settings_updated',
+          'family_invite_created',
+          'family_invite_revoked',
+          'family_invite_accepted',
+          'member_role_changed',
+          'member_removed',
+          'ownership_transferred'
+        ]
         && data.actorId == request.auth.uid
         && data.summary is string
         && data.summary.size() >= 1
@@ -443,6 +451,11 @@ service cloud.firestore {
           && getAfter(/databases/$(database)/documents/families/$(familyId)).data.ownerId == request.auth.uid
           && validOwnerMember(request.resource.data, memberId);
         allow update, delete: if false;
+      }
+
+      match /invites/{inviteId} {
+        allow read: if isFamilyOwner(familyId);
+        allow create, update, delete: if false;
       }
 
       match /profiles/{profileId} {

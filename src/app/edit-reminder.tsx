@@ -139,7 +139,7 @@ export default function EditReminderScreen() {
             <View style={styles.optionGrid}>
               {REMINDER_KIND_OPTIONS.map((option) => {
                 const selected = option.key === kind;
-                return <Pressable key={option.key} accessibilityRole="radio" accessibilityState={{ selected }} onPress={() => setKind(option.key)} style={[styles.kindOption, selected && { backgroundColor: option.color, borderColor: option.color }]}><Ionicons name={option.icon} size={21} color={selected ? AppColors.paper : option.color} /><Text style={[styles.kindText, selected && styles.selectedText]}>{option.label}</Text></Pressable>;
+                return <Pressable key={option.key} accessibilityRole="radio" accessibilityState={{ selected }} onPress={() => setKind(option.key)} style={[styles.kindOption, selected && { backgroundColor: option.color, borderColor: option.color }]}><Ionicons name={option.icon} size={21} color={selected ? AppColors.onAccent : option.color} /><Text style={[styles.kindText, selected && styles.selectedText]}>{option.label}</Text></Pressable>;
               })}
             </View>
           </View>
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
   card: { gap: Spacing.lg, padding: Spacing.xl, borderRadius: Radius.lg, backgroundColor: AppColors.paper, borderWidth: 1, borderColor: AppColors.border, ...Shadow.card },
   sectionTitle: { color: AppColors.ink, fontSize: 18, fontWeight: '700' }, helper: { color: AppColors.inkMuted, fontSize: 13 }, helperLeft: { color: AppColors.inkMuted, fontSize: 13, lineHeight: 19 },
   optionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm }, kindOption: { width: '48%', minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingHorizontal: Spacing.md, borderRadius: Radius.md, borderWidth: 1, borderColor: AppColors.border, backgroundColor: AppColors.cloud },
-  kindText: { color: AppColors.ink, fontSize: 13, fontWeight: '700' }, selectedText: { color: AppColors.paper },
+  kindText: { color: AppColors.ink, fontSize: 13, fontWeight: '700' }, selectedText: { color: AppColors.onAccent },
   personOption: { minHeight: 58, flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingHorizontal: Spacing.md, borderRadius: Radius.md, borderWidth: 1, borderColor: AppColors.border }, personSelected: { borderColor: AppColors.violet, backgroundColor: AppColors.violetSoft },
   noneAvatar: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center', borderRadius: Radius.full, backgroundColor: AppColors.cloud }, personName: { flex: 1, color: AppColors.ink, fontSize: 14, fontWeight: '700' },
   errorBox: { flexDirection: 'row', gap: Spacing.sm, padding: Spacing.lg, borderRadius: Radius.md, backgroundColor: AppColors.blushSoft }, errorText: { flex: 1, color: AppColors.danger, fontSize: 13, lineHeight: 19 },

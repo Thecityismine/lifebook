@@ -168,7 +168,7 @@ export default function PeopleScreen() {
                 accessibilityRole="button"
                 onPress={() => router.push('/edit-person')}
                 style={({ pressed }) => [styles.addButton, pressed && styles.pressed]}>
-                <Ionicons name="person-add" size={19} color={AppColors.paper} />
+                <Ionicons name="person-add" size={19} color={AppColors.onAccent} />
                 <Text style={styles.addButtonText}>Add first person</Text>
               </Pressable>
             ) : null}
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
   },
   filterActive: { backgroundColor: AppColors.violet, borderColor: AppColors.violet },
   filterText: { color: AppColors.inkMuted, fontSize: 13, fontWeight: '600' },
-  filterTextActive: { color: AppColors.paper },
+  filterTextActive: { color: AppColors.onAccent },
   peopleCard: {
     backgroundColor: AppColors.paper, borderRadius: Radius.lg, paddingHorizontal: Spacing.lg,
     borderWidth: 1, borderColor: AppColors.border, ...Shadow.card,
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm,
     minHeight: 50, paddingHorizontal: Spacing.xl, borderRadius: Radius.lg, backgroundColor: AppColors.violet,
   },
-  addButtonText: { color: AppColors.paper, fontSize: 14, fontWeight: '700' },
+  addButtonText: { color: AppColors.onAccent, fontSize: 14, fontWeight: '700' },
   privateNote: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, paddingVertical: Spacing.md },
   privateNoteText: { flex: 1, color: AppColors.inkMuted, fontSize: 12, fontWeight: '600', textAlign: 'center' },
   pressed: { opacity: 0.6 },

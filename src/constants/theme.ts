@@ -1,25 +1,28 @@
 import { Platform } from 'react-native';
 
 export const AppColors = {
-  ink: '#17213F',
-  inkMuted: '#5F6880',
-  slate: '#7E879D',
-  violet: '#6956E8',
-  violetDark: '#5140CE',
-  violetSoft: '#EEEAFE',
-  sky: '#4A9BF7',
-  skySoft: '#EAF4FF',
-  mint: '#51C99A',
-  mintSoft: '#E7F8F1',
-  sun: '#F4B942',
-  sunSoft: '#FFF5D9',
-  blush: '#ED7D9B',
-  blushSoft: '#FDECF1',
-  cloud: '#F7F8FC',
-  paper: '#FFFFFF',
-  border: '#E8EAF2',
-  line: '#DDE1EC',
-  danger: '#C94E62',
+  ink: '#F4F6FF',
+  inkMuted: '#B8C0D4',
+  slate: '#8F9AB3',
+  violet: '#8B7CFF',
+  violetDark: '#725FFF',
+  violetSoft: '#292447',
+  sky: '#68AEFF',
+  skySoft: '#172C45',
+  mint: '#65D8AC',
+  mintSoft: '#17372F',
+  sun: '#F6C75B',
+  sunSoft: '#3B311C',
+  blush: '#F08AA5',
+  blushSoft: '#3D222D',
+  cloud: '#0C1120',
+  paper: '#171D2E',
+  border: '#2A344C',
+  line: '#35415D',
+  danger: '#FF8396',
+  hero: '#1B243D',
+  onAccent: '#0C1120',
+  onDark: '#FFFFFF',
 } as const;
 
 export const Colors = {
@@ -31,11 +34,11 @@ export const Colors = {
     textSecondary: AppColors.inkMuted,
   },
   dark: {
-    text: AppColors.paper,
-    background: '#101526',
-    backgroundElement: '#1B2237',
-    backgroundSelected: '#2B3150',
-    textSecondary: '#BDC4D7',
+    text: AppColors.ink,
+    background: AppColors.cloud,
+    backgroundElement: AppColors.paper,
+    backgroundSelected: AppColors.violetSoft,
+    textSecondary: AppColors.inkMuted,
   },
 } as const;
 
@@ -88,9 +91,9 @@ export const Radius = {
 export const Shadow = {
   card: Platform.select({
     ios: {
-      shadowColor: '#17213F',
+      shadowColor: '#000000',
       shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.07,
+      shadowOpacity: 0.22,
       shadowRadius: 18,
     },
     android: { elevation: 2 },
@@ -108,9 +111,9 @@ export const Shadow = {
   }),
   navigation: Platform.select({
     ios: {
-      shadowColor: '#17213F',
+      shadowColor: '#000000',
       shadowOffset: { width: 0, height: -4 },
-      shadowOpacity: 0.04,
+      shadowOpacity: 0.18,
       shadowRadius: 14,
     },
     android: { elevation: 10 },

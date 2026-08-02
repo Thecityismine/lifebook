@@ -50,7 +50,7 @@ export default function ConsentScreen() {
         onPress={() => setConfirmed((value) => !value)}
         style={({ pressed }) => [styles.confirmation, confirmed && styles.confirmationChecked, pressed && styles.pressed]}>
         <View style={[styles.checkbox, confirmed && styles.checkboxChecked]}>
-          {confirmed ? <Ionicons name="checkmark" size={18} color={AppColors.paper} /> : null}
+          {confirmed ? <Ionicons name="checkmark" size={18} color={AppColors.onAccent} /> : null}
         </View>
         <Text style={styles.confirmationText}>I am a parent or legal guardian and I understand that I am responsible for this family space.</Text>
       </Pressable>

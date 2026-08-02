@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   initials: {
-    color: AppColors.paper,
+    color: AppColors.onAccent,
     fontFamily: FontFamily?.bold,
     fontWeight: '700',
     letterSpacing: 0.2,
@@ -48,6 +48,6 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     backgroundColor: AppColors.mint,
     borderWidth: 2,
-    borderColor: AppColors.paper,
+    borderColor: AppColors.onAccent,
   },
 });

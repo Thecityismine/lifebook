@@ -346,7 +346,7 @@ export default function EditPersonScreen() {
                 disabled={!customTag.trim() || tags.length >= 12}
                 onPress={addCustomTag}
                 style={[styles.addTagButton, (!customTag.trim() || tags.length >= 12) && styles.disabledButton]}>
-                <Ionicons name="add" size={22} color={AppColors.paper} />
+                <Ionicons name="add" size={22} color={AppColors.onAccent} />
               </Pressable>
             </View>
           </View>
@@ -430,7 +430,7 @@ const styles = StyleSheet.create({
   chipSelected: { backgroundColor: AppColors.violet, borderColor: AppColors.violet },
   customChip: { backgroundColor: AppColors.skySoft },
   chipText: { color: AppColors.inkMuted, fontSize: 13, fontWeight: '700' },
-  chipTextSelected: { color: AppColors.paper },
+  chipTextSelected: { color: AppColors.onAccent },
   customTagRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   customTagInput: {
     flex: 1, minHeight: 50, paddingHorizontal: Spacing.lg, borderRadius: Radius.md,

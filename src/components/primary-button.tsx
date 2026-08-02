@@ -28,11 +28,11 @@ export function PrimaryButton({
       onPress={onPress}
       style={({ pressed }) => [styles.button, unavailable && styles.disabled, pressed && !unavailable && styles.pressed]}>
       {loading ? (
-        <ActivityIndicator color={AppColors.paper} />
+        <ActivityIndicator color={AppColors.onAccent} />
       ) : (
         <>
           <Text style={styles.label}>{label}</Text>
-          <Ionicons name={icon} size={20} color={AppColors.paper} />
+          <Ionicons name={icon} size={20} color={AppColors.onAccent} />
         </>
       )}
     </Pressable>
@@ -51,13 +51,13 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   label: {
-    color: AppColors.paper,
+    color: AppColors.onAccent,
     fontFamily: FontFamily?.medium,
     fontSize: 16,
     fontWeight: '700',
   },
   disabled: {
-    backgroundColor: '#B8B1EA',
+    backgroundColor: '#3A4260',
   },
   pressed: {
     opacity: 0.82,

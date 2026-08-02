@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
   hero: {
     height: 214,
     borderRadius: Radius.xl,
-    backgroundColor: AppColors.ink,
+    backgroundColor: AppColors.hero,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',

@@ -20,7 +20,7 @@ function TabIcon({ name, color, focused }: { name: IconName; color: ColorValue; 
 function AddIcon({ focused }: { focused: boolean }) {
   return (
     <View style={[styles.addButton, focused && styles.addButtonActive]}>
-      <Ionicons name="add" size={30} color={AppColors.paper} />
+      <Ionicons name="add" size={30} color={AppColors.onAccent} />
     </View>
   );
 }
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     backgroundColor: AppColors.violet,
     borderWidth: 4,
-    borderColor: AppColors.paper,
+    borderColor: AppColors.onDark,
     ...Shadow.floating,
   },
   addButtonActive: {

@@ -84,7 +84,7 @@ export default function NotificationSettingsScreen() {
           ) : null}
           {supported && permission === 'denied' ? (
             <Pressable accessibilityRole="button" onPress={() => void Linking.openSettings()} style={({ pressed }) => [styles.settingsButton, pressed && styles.pressed]}>
-              <Ionicons name="settings-outline" size={18} color={AppColors.paper} />
+              <Ionicons name="settings-outline" size={18} color={AppColors.onAccent} />
               <Text style={styles.settingsText}>Open system settings</Text>
             </Pressable>
           ) : null}
@@ -113,10 +113,10 @@ const styles = StyleSheet.create({
   eyebrow: { color: AppColors.violet, fontSize: 11, fontWeight: '800', letterSpacing: 0.9, textTransform: 'uppercase' },
   title: { color: AppColors.ink, fontFamily: FontFamily?.bold, fontSize: 30, fontWeight: '800', marginTop: 3 },
   subtitle: { color: AppColors.inkMuted, fontSize: 13, lineHeight: 19, marginTop: 4 },
-  hero: { flexDirection: 'row', gap: Spacing.lg, padding: Spacing.xl, borderRadius: Radius.xl, backgroundColor: AppColors.ink, ...Shadow.card },
+  hero: { flexDirection: 'row', gap: Spacing.lg, padding: Spacing.xl, borderRadius: Radius.xl, backgroundColor: AppColors.hero, ...Shadow.card },
   heroIcon: { width: 58, height: 58, alignItems: 'center', justifyContent: 'center', borderRadius: Radius.lg, backgroundColor: AppColors.paper },
   heroCopy: { flex: 1 },
-  heroTitle: { color: AppColors.paper, fontSize: 18, fontWeight: '800' },
+  heroTitle: { color: AppColors.onDark, fontSize: 18, fontWeight: '800' },
   heroText: { color: '#C9D0E0', fontSize: 13, lineHeight: 20, marginTop: 5 },
   card: { gap: Spacing.lg, padding: Spacing.xl, borderRadius: Radius.lg, backgroundColor: AppColors.paper, borderWidth: 1, borderColor: AppColors.border, ...Shadow.card },
   settingRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.lg },
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
   refreshButton: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, borderRadius: Radius.lg, borderWidth: 1, borderColor: AppColors.border, backgroundColor: AppColors.cloud },
   refreshText: { color: AppColors.violet, fontSize: 14, fontWeight: '800' },
   settingsButton: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, borderRadius: Radius.lg, backgroundColor: AppColors.violet },
-  settingsText: { color: AppColors.paper, fontSize: 14, fontWeight: '800' },
+  settingsText: { color: AppColors.onAccent, fontSize: 14, fontWeight: '800' },
   errorBox: { flexDirection: 'row', gap: Spacing.sm, padding: Spacing.lg, borderRadius: Radius.md, backgroundColor: AppColors.blushSoft },
   errorText: { flex: 1, color: AppColors.danger, fontSize: 13, lineHeight: 19 },
   pressed: { opacity: 0.65 },

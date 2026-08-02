@@ -346,6 +346,6 @@ const styles = StyleSheet.create({
   restoreText: { color: AppColors.violet },
   centerState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.md, padding: Spacing.xl },
   primaryAction: { minHeight: 48, justifyContent: 'center', paddingHorizontal: Spacing.xl, borderRadius: Radius.lg, backgroundColor: AppColors.violet },
-  primaryActionText: { color: AppColors.paper, fontWeight: '700' },
+  primaryActionText: { color: AppColors.onAccent, fontWeight: '700' },
   pressed: { opacity: 0.6 },
 });

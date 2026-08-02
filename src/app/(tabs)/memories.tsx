@@ -140,7 +140,7 @@ export default function MemoriesScreen() {
             </Text>
             {memories.length === 0 ? (
               <Pressable onPress={() => router.push('/edit-memory')} style={({ pressed }) => [styles.addButton, pressed && styles.pressed]}>
-                <Ionicons name="heart" size={19} color={AppColors.paper} />
+                <Ionicons name="heart" size={19} color={AppColors.onAccent} />
                 <Text style={styles.addButtonText}>Add first memory</Text>
               </Pressable>
             ) : null}
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
   filter: { alignItems: 'center', justifyContent: 'center', minHeight: 42, paddingHorizontal: Spacing.lg, borderRadius: Radius.full, backgroundColor: AppColors.paper, borderWidth: 1, borderColor: AppColors.border },
   filterActive: { backgroundColor: AppColors.violet, borderColor: AppColors.violet },
   filterText: { color: AppColors.inkMuted, fontSize: 13, fontWeight: '600' },
-  filterTextActive: { color: AppColors.paper },
+  filterTextActive: { color: AppColors.onAccent },
   timeline: { position: 'relative', gap: Spacing.lg },
   timelineLine: { position: 'absolute', left: 50, top: 26, bottom: 26, width: 2, backgroundColor: AppColors.line },
   timelineRow: { flexDirection: 'row', alignItems: 'flex-start' },
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
   stateTitle: { color: AppColors.ink, fontSize: 18, fontWeight: '700', textAlign: 'center' },
   stateDetail: { color: AppColors.inkMuted, fontSize: 14, lineHeight: 21, textAlign: 'center', maxWidth: 390 },
   addButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, minHeight: 50, paddingHorizontal: Spacing.xl, borderRadius: Radius.lg, backgroundColor: AppColors.violet },
-  addButtonText: { color: AppColors.paper, fontSize: 14, fontWeight: '700' },
+  addButtonText: { color: AppColors.onAccent, fontSize: 14, fontWeight: '700' },
   privateNote: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, paddingVertical: Spacing.md },
   privateNoteText: { flex: 1, color: AppColors.inkMuted, fontSize: 12, fontWeight: '600', textAlign: 'center' },
   pressed: { opacity: 0.6, transform: [{ scale: 0.99 }] },

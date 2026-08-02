@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
   profileChip: { minHeight: 44, justifyContent: 'center', paddingHorizontal: Spacing.lg, borderRadius: Radius.full, backgroundColor: AppColors.cloud, borderWidth: 1, borderColor: AppColors.border },
   profileChipSelected: { backgroundColor: AppColors.violet, borderColor: AppColors.violet },
   profileChipText: { color: AppColors.inkMuted, fontSize: 13, fontWeight: '700' },
-  profileChipTextSelected: { color: AppColors.paper },
+  profileChipTextSelected: { color: AppColors.onAccent },
   privacyNote: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, padding: Spacing.lg, borderRadius: Radius.md, backgroundColor: AppColors.mintSoft },
   privacyText: { flex: 1, color: AppColors.inkMuted, fontSize: 13, lineHeight: 19 },
   errorBox: { flexDirection: 'row', gap: Spacing.sm, padding: Spacing.lg, borderRadius: Radius.md, backgroundColor: AppColors.blushSoft },

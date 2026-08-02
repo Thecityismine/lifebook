@@ -184,7 +184,7 @@ export default function HomeScreen() {
               accessibilityLabel="Open People"
               onPress={() => router.push('/people')}
               style={({ pressed }) => [styles.arrowButton, pressed && styles.pressed]}>
-              <Ionicons name="arrow-forward" size={20} color={AppColors.paper} />
+              <Ionicons name="arrow-forward" size={20} color={AppColors.onAccent} />
             </Pressable>
           </View>
         </View>
@@ -252,7 +252,7 @@ export default function HomeScreen() {
               <View style={styles.memoryArtwork}>
                 <View style={styles.memoryOrbLarge} />
                 <View style={styles.memoryOrbSmall} />
-                <Ionicons name={latestMemory ? 'sparkles' : 'heart'} size={34} color={AppColors.paper} />
+                <Ionicons name={latestMemory ? 'sparkles' : 'heart'} size={34} color={AppColors.onDark} />
               </View>
             )}
             <View style={styles.memoryCopy}>
@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
     minHeight: 260,
     padding: Spacing.xxl,
     borderRadius: Radius.xl,
-    backgroundColor: AppColors.ink,
+    backgroundColor: AppColors.hero,
     overflow: 'hidden',
     ...Shadow.card,
   },
@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1.1,
   },
   storyTitle: {
-    color: AppColors.paper,
+    color: AppColors.onDark,
     fontFamily: FontFamily?.bold,
     fontSize: 28,
     lineHeight: 34,
@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: AppColors.ink,
   },
-  avatarCountText: { color: AppColors.paper, fontSize: 11, fontWeight: '700' },
+  avatarCountText: { color: AppColors.onDark, fontSize: 11, fontWeight: '700' },
   arrowButton: {
     alignItems: 'center',
     justifyContent: 'center',

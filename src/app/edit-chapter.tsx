@@ -213,7 +213,7 @@ export default function EditChapterScreen() {
                     accessibilityState={{ selected }}
                     onPress={() => setIconKey(option.key)}
                     style={[styles.iconOption, selected && styles.iconOptionSelected]}>
-                    <Ionicons name={option.icon} size={22} color={selected ? AppColors.paper : AppColors.violet} />
+                    <Ionicons name={option.icon} size={22} color={selected ? AppColors.onAccent : AppColors.violet} />
                     <Text style={[styles.optionText, selected && styles.optionTextSelected]}>{option.label}</Text>
                   </Pressable>
                 );
@@ -230,7 +230,7 @@ export default function EditChapterScreen() {
                     accessibilityState={{ selected }}
                     onPress={() => setColorKey(option.key)}
                     style={[styles.colorOption, { backgroundColor: option.color }, selected && styles.colorOptionSelected]}>
-                    {selected ? <Ionicons name="checkmark" size={19} color={AppColors.paper} /> : null}
+                    {selected ? <Ionicons name="checkmark" size={19} color={AppColors.onAccent} /> : null}
                   </Pressable>
                 );
               })}
@@ -320,9 +320,9 @@ const styles = StyleSheet.create({
   iconOption: { width: '31%', minHeight: 72, alignItems: 'center', justifyContent: 'center', gap: 5, borderRadius: Radius.md, backgroundColor: AppColors.violetSoft, borderWidth: 1, borderColor: AppColors.violetSoft },
   iconOptionSelected: { backgroundColor: AppColors.violet, borderColor: AppColors.violet },
   optionText: { color: AppColors.violet, fontSize: 11, fontWeight: '700' },
-  optionTextSelected: { color: AppColors.paper },
+  optionTextSelected: { color: AppColors.onAccent },
   colorRow: { flexDirection: 'row', gap: Spacing.md },
-  colorOption: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center', borderRadius: Radius.full, borderWidth: 3, borderColor: AppColors.paper },
+  colorOption: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center', borderRadius: Radius.full, borderWidth: 3, borderColor: AppColors.onAccent },
   colorOptionSelected: { borderColor: AppColors.ink },
   sectionHeading: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: Spacing.md },
   sectionCopy: { flex: 1, gap: 3 },

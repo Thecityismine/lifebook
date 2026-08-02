@@ -11,6 +11,10 @@ service cloud.firestore {
     }
 
     function isSelf(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function isVerifiedSelf(userId) {
       return verifiedParent() && request.auth.uid == userId;
     }
 
@@ -374,7 +378,7 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isSelf(userId);
 
-      allow create: if isSelf(userId)
+      allow create: if isVerifiedSelf(userId)
         && request.resource.data.keys().hasAll([
           'userId',
           'displayName',
@@ -404,7 +408,7 @@ service cloud.firestore {
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time;
 
-      allow update: if isSelf(userId)
+      allow update: if isVerifiedSelf(userId)
         && request.resource.data.userId == resource.data.userId
         && request.resource.data.familyId == resource.data.familyId
         && request.resource.data.createdAt == resource.data.createdAt
@@ -418,7 +422,7 @@ service cloud.firestore {
 
       match /consents/{consentId} {
         allow read: if isSelf(userId);
-        allow create: if isSelf(userId)
+        allow create: if isVerifiedSelf(userId)
           && request.resource.data.keys().hasAll(['userId', 'version', 'guardianConfirmed', 'source', 'acceptedAt'])
           && request.resource.data.keys().hasOnly(['userId', 'version', 'guardianConfirmed', 'source', 'acceptedAt'])
           && request.resource.data.userId == userId

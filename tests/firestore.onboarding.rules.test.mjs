@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { after, before, beforeEach, test } from 'node:test';
 import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing';
-import { collection, doc, runTransaction, serverTimestamp, setDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, runTransaction, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
 
 const projectId = 'lifebook-31782';
 const consentVersion = '2026-08-01.parent-led.v1';
@@ -109,4 +109,42 @@ test('client rules reject repairing an incomplete user record, requiring the ver
   }).firestore();
 
   await assertFails(createFamilySpace(db, userId, email));
+});
+
+test('signed-in parent can recover their own setup read while unverified writes remain blocked', async () => {
+  const userId = 'stale-token-parent';
+  const email = 'stale-token-parent@example.com';
+  await testEnvironment.withSecurityRulesDisabled(async (context) => {
+    const db = context.firestore();
+    await setDoc(doc(db, 'users', userId), {
+      userId,
+      displayName: 'Parent',
+      email,
+      familyId: 'family-created-by-server',
+      activeProfileId: null,
+      onboardingComplete: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    await setDoc(doc(db, 'users', userId, 'consents', consentVersion), {
+      userId,
+      version: consentVersion,
+      guardianConfirmed: true,
+      source: 'onboarding',
+      acceptedAt: new Date(),
+    });
+  });
+
+  const db = testEnvironment.authenticatedContext(userId, {
+    email,
+    email_verified: false,
+  }).firestore();
+
+  await assertSucceeds(getDoc(doc(db, 'users', userId)));
+  await assertSucceeds(getDoc(doc(db, 'users', userId, 'consents', consentVersion)));
+  await assertFails(updateDoc(doc(db, 'users', userId), {
+    activeProfileId: 'profile-not-allowed',
+    onboardingComplete: true,
+    updatedAt: serverTimestamp(),
+  }));
 });

@@ -17,6 +17,7 @@ type AuthContextValue = {
   setupLoading: boolean;
   setupError: boolean;
   refreshUser: () => Promise<void>;
+  confirmFamilyCreated: (familyId: string) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -91,9 +92,38 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setRevision((value) => value + 1);
   }, []);
 
+  const confirmFamilyCreated = useCallback((familyId: string) => {
+    const currentUser = auth?.currentUser;
+    if (!currentUser) {
+      return;
+    }
+
+    setSetup((currentSetup) => ({
+      familyId,
+      activeProfileId: currentSetup?.activeProfileId ?? null,
+      onboardingComplete: currentSetup?.onboardingComplete ?? false,
+    }));
+    setSetupError(false);
+    setSetupLoading(false);
+
+    setupUnsubscribe.current?.();
+    setupUnsubscribe.current = subscribeToParentSetup(
+      currentUser.uid,
+      (nextSetup) => {
+        setSetup(nextSetup);
+        setSetupError(false);
+        setSetupLoading(false);
+      },
+      () => {
+        setSetupError(true);
+        setSetupLoading(false);
+      },
+    );
+  }, [auth]);
+
   const value = useMemo(
-    () => ({ user, initializing, setup, setupLoading, setupError, refreshUser }),
-    [user, initializing, setup, setupLoading, setupError, refreshUser],
+    () => ({ user, initializing, setup, setupLoading, setupError, refreshUser, confirmFamilyCreated }),
+    [user, initializing, setup, setupLoading, setupError, refreshUser, confirmFamilyCreated],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

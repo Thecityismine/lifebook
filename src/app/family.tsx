@@ -7,10 +7,12 @@ import { FormField } from '@/components/form-field';
 import { OnboardingShell } from '@/components/onboarding-shell';
 import { PrimaryButton } from '@/components/primary-button';
 import { AppColors, Radius, Spacing } from '@/constants/theme';
+import { useAuthSession } from '@/providers/auth-provider';
 import { createFamilySpace } from '@/services/family';
 
 export default function FamilyScreen() {
   const router = useRouter();
+  const { confirmFamilyCreated } = useAuthSession();
   const [familyName, setFamilyName] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -27,6 +29,7 @@ export default function FamilyScreen() {
       return;
     }
 
+    confirmFamilyCreated(result.familyId);
     router.replace('/child');
   }
 

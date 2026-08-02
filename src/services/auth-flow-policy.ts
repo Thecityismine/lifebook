@@ -8,9 +8,15 @@ type AuthUserIdentity = {
   emailVerified: boolean;
 };
 
-type ParentSetupState = {
+export type ParentSetupState = {
   familyId: string | null;
+  activeProfileId: string | null;
   onboardingComplete: boolean;
+};
+
+export type SetupReconciliation = {
+  setup: ParentSetupState | null;
+  pendingConfirmation: ParentSetupState | null;
 };
 
 export function authSetupIdentity(user: AuthUserIdentity | null): AuthSetupIdentity {
@@ -44,4 +50,27 @@ export function requiredSetupRoute(
   }
 
   return null;
+}
+
+export function reconcileConfirmedSetup(
+  observed: ParentSetupState | null,
+  pendingConfirmation: ParentSetupState | null,
+): SetupReconciliation {
+  if (!pendingConfirmation) {
+    return { setup: observed, pendingConfirmation: null };
+  }
+
+  const familyMatches = observed?.familyId === pendingConfirmation.familyId;
+  const completionMatches = !pendingConfirmation.onboardingComplete
+    || (observed?.onboardingComplete === true
+      && observed.activeProfileId === pendingConfirmation.activeProfileId);
+
+  if (familyMatches && completionMatches) {
+    return { setup: observed, pendingConfirmation: null };
+  }
+
+  return {
+    setup: pendingConfirmation,
+    pendingConfirmation,
+  };
 }

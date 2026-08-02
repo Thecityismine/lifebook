@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import {
   authSetupIdentity,
+  reconcileConfirmedSetup,
   requiredSetupRoute,
   shouldRestartSetupSubscription,
 } from '../src/services/auth-flow-policy.ts';
@@ -11,6 +12,45 @@ test('keeps the setup subscription during a token refresh for the same verified 
   const identity = authSetupIdentity({ uid: 'parent-1', emailVerified: true });
 
   assert.equal(shouldRestartSetupSubscription(identity, identity), false);
+});
+
+test('keeps a confirmed family while a stale empty snapshot catches up', () => {
+  const confirmed = {
+    familyId: 'family-1',
+    activeProfileId: null,
+    onboardingComplete: false,
+  };
+
+  assert.deepEqual(reconcileConfirmedSetup(null, confirmed), {
+    setup: confirmed,
+    pendingConfirmation: confirmed,
+  });
+  assert.deepEqual(reconcileConfirmedSetup(confirmed, confirmed), {
+    setup: confirmed,
+    pendingConfirmation: null,
+  });
+});
+
+test('keeps completed onboarding while a stale incomplete snapshot catches up', () => {
+  const confirmed = {
+    familyId: 'family-1',
+    activeProfileId: 'profile-1',
+    onboardingComplete: true,
+  };
+  const stale = {
+    familyId: 'family-1',
+    activeProfileId: null,
+    onboardingComplete: false,
+  };
+
+  assert.deepEqual(reconcileConfirmedSetup(stale, confirmed), {
+    setup: confirmed,
+    pendingConfirmation: confirmed,
+  });
+  assert.deepEqual(reconcileConfirmedSetup(confirmed, confirmed), {
+    setup: confirmed,
+    pendingConfirmation: null,
+  });
 });
 
 test('restarts setup when the user or verification status changes', () => {

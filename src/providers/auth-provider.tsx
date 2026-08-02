@@ -6,6 +6,7 @@ import { getFirebaseAuth } from '@/services/firebase';
 import { subscribeToParentSetup, type ParentSetup } from '@/services/family';
 import {
   authSetupIdentity,
+  reconcileConfirmedSetup,
   shouldRestartSetupSubscription,
   type AuthSetupIdentity,
 } from '@/services/auth-flow-policy';
@@ -32,7 +33,16 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [setupError, setSetupError] = useState(false);
   const setupUnsubscribe = useRef<(() => void) | null>(null);
   const setupIdentity = useRef<AuthSetupIdentity>(authSetupIdentity(null));
+  const setupConfirmation = useRef<ParentSetup | null>(null);
   const [, setRevision] = useState(0);
+
+  const applySetupObservation = useCallback((nextSetup: ParentSetup | null) => {
+    const reconciliation = reconcileConfirmedSetup(nextSetup, setupConfirmation.current);
+    setupConfirmation.current = reconciliation.pendingConfirmation;
+    setSetup(reconciliation.setup);
+    setSetupError(false);
+    setSetupLoading(false);
+  }, []);
 
   useEffect(() => {
     if (!auth) {
@@ -53,6 +63,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       setupUnsubscribe.current?.();
       setupUnsubscribe.current = null;
       setupIdentity.current = nextSetupIdentity;
+      setupConfirmation.current = null;
       setSetup(null);
       setSetupError(false);
 
@@ -60,10 +71,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         setSetupLoading(true);
         setupUnsubscribe.current = subscribeToParentSetup(
           nextUser.uid,
-          (nextSetup) => {
-            setSetup(nextSetup);
-            setSetupLoading(false);
-          },
+          applySetupObservation,
           () => {
             setSetupError(true);
             setSetupLoading(false);
@@ -80,7 +88,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       setupUnsubscribe.current?.();
       unsubscribe();
     };
-  }, [auth]);
+  }, [applySetupObservation, auth]);
 
   const refreshUser = useCallback(async () => {
     const currentUser = getFirebaseAuth()?.currentUser;
@@ -99,35 +107,35 @@ export function AuthProvider({ children }: PropsWithChildren) {
       return;
     }
 
-    setSetup((currentSetup) => ({
+    const confirmedSetup: ParentSetup = {
       familyId,
-      activeProfileId: currentSetup?.activeProfileId ?? null,
-      onboardingComplete: currentSetup?.onboardingComplete ?? false,
-    }));
+      activeProfileId: null,
+      onboardingComplete: false,
+    };
+    setupConfirmation.current = confirmedSetup;
+    setSetup(confirmedSetup);
     setSetupError(false);
     setSetupLoading(false);
 
     setupUnsubscribe.current?.();
     setupUnsubscribe.current = subscribeToParentSetup(
       currentUser.uid,
-      (nextSetup) => {
-        setSetup(nextSetup);
-        setSetupError(false);
-        setSetupLoading(false);
-      },
+      applySetupObservation,
       () => {
         setSetupError(true);
         setSetupLoading(false);
       },
     );
-  }, [auth]);
+  }, [applySetupObservation, auth]);
 
   const confirmManagedProfileCreated = useCallback((familyId: string, profileId: string) => {
-    setSetup({
+    const confirmedSetup: ParentSetup = {
       familyId,
       activeProfileId: profileId,
       onboardingComplete: true,
-    });
+    };
+    setupConfirmation.current = confirmedSetup;
+    setSetup(confirmedSetup);
     setSetupError(false);
     setSetupLoading(false);
   }, []);

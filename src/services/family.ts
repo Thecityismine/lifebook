@@ -1,18 +1,16 @@
 import { FirebaseError } from 'firebase/app';
-import { getIdToken, getIdTokenResult } from 'firebase/auth';
 import {
   collection,
   doc,
   getDoc,
   onSnapshot,
-  runTransaction,
   serverTimestamp,
   writeBatch,
   type Unsubscribe,
 } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 
-import { PARENT_CONSENT_SOURCE, PARENT_CONSENT_VERSION } from '@/constants/privacy';
-import { getFirebaseAuth, getFirebaseFirestore } from '@/services/firebase';
+import { getFirebaseAuth, getFirebaseFirestore, getFirebaseFunctions } from '@/services/firebase';
 
 export type ParentSetup = {
   familyId: string | null;
@@ -35,6 +33,16 @@ function unavailableMessage() {
 
 function familyErrorMessage(error: unknown) {
   if (error instanceof FirebaseError) {
+    if (error.code === 'functions/unauthenticated') {
+      return 'Sign in again before creating your family space.';
+    }
+
+    if (error.code === 'functions/failed-precondition'
+      || error.code === 'functions/invalid-argument'
+      || error.code === 'functions/permission-denied') {
+      return error.message || unavailableMessage();
+    }
+
     if (error.code === 'permission-denied') {
       return 'LifeBook could not verify permission for this family space. Sign in again and try once more.';
     }
@@ -90,75 +98,19 @@ export function subscribeToParentSetup(
 
 export async function createFamilySpace(name: string): Promise<FamilyActionResult> {
   const user = requireVerifiedParent();
-  const db = getFirebaseFirestore();
-  if (!user || !db) {
+  const functions = getFirebaseFunctions();
+  if (!user || !functions) {
     return { ok: false, message: unavailableMessage() };
   }
 
   const cleanName = name.trim();
 
   try {
-    // Email verification changes an ID-token claim. Reuse a current verified
-    // token, and force a refresh only when an open session still has the old
-    // claim. This avoids restarting auth-dependent work on every family save.
-    const tokenResult = await getIdTokenResult(user);
-    if (tokenResult.claims.email_verified !== true) {
-      await getIdToken(user, true);
-    }
-    const familyId = await runTransaction(db, async (transaction) => {
-      const userRef = doc(db, 'users', user.uid);
-      const userSnapshot = await transaction.get(userRef);
-      const existingFamilyId = userSnapshot.exists() && typeof userSnapshot.data().familyId === 'string'
-        ? userSnapshot.data().familyId as string
-        : null;
-      const familyRef = existingFamilyId ? doc(db, 'families', existingFamilyId) : doc(collection(db, 'families'));
-      const memberRef = doc(db, 'families', familyRef.id, 'members', user.uid);
-      const consentRef = doc(db, 'users', user.uid, 'consents', PARENT_CONSENT_VERSION);
-      const consentSnapshot = await transaction.get(consentRef);
-
-      if (existingFamilyId) {
-        transaction.update(familyRef, { name: cleanName, updatedAt: serverTimestamp() });
-        return existingFamilyId;
-      }
-
-      transaction.set(familyRef, {
-        name: cleanName,
-        ownerId: user.uid,
-        schemaVersion: 1,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
-      transaction.set(memberRef, {
-        userId: user.uid,
-        role: 'owner',
-        displayName: user.displayName?.trim() || 'Parent',
-        email: user.email || '',
-        joinedAt: serverTimestamp(),
-      });
-      transaction.set(userRef, {
-        userId: user.uid,
-        displayName: user.displayName?.trim() || 'Parent',
-        email: user.email || '',
-        familyId: familyRef.id,
-        activeProfileId: null,
-        onboardingComplete: false,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
-      if (!consentSnapshot.exists()) {
-        transaction.set(consentRef, {
-          userId: user.uid,
-          version: PARENT_CONSENT_VERSION,
-          guardianConfirmed: true,
-          source: PARENT_CONSENT_SOURCE,
-          acceptedAt: serverTimestamp(),
-        });
-      }
-
-      return familyRef.id;
-    });
-
-    return { ok: true, familyId };
+    const response = await httpsCallable<
+      { name: string },
+      { ok: true; familyId: string }
+    >(functions, 'createFamilySpace')({ name: cleanName });
+    return { ok: true, familyId: response.data.familyId };
   } catch (error) {
     return { ok: false, message: familyErrorMessage(error) };
   }

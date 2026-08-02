@@ -56,6 +56,7 @@
     "test:auth-flow": "node --experimental-strip-types --test tests/auth-flow-policy.test.mjs",
     "test:notifications": "node --experimental-strip-types --test tests/reminder-notification-policy.test.mjs",
     "test:rules:people": "firebase emulators:exec --only firestore,storage \"node --test tests/firestore.people.rules.test.mjs\"",
+    "test:rules:onboarding": "firebase emulators:exec --only firestore \"node --test tests/firestore.onboarding.rules.test.mjs\"",
     "test:rules": "firebase emulators:exec --only firestore,storage \"node --test tests/firestore.people.rules.test.mjs\"",
     "lint": "expo lint"
   },

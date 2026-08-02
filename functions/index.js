@@ -17,6 +17,10 @@ const {
   validInviteEmail,
   validInviteRole,
 } = require('./family-collaboration');
+const {
+  cleanFamilyName,
+  requireAuthoritativelyVerifiedAccount,
+} = require('./family-onboarding');
 
 initializeApp();
 
@@ -78,6 +82,89 @@ async function resolveInvite(token, email) {
 function auditEvent(familyId, eventType, actorId, summary, createdAt = Timestamp.now()) {
   return { familyId, eventType, actorId, summary, schemaVersion: 1, createdAt };
 }
+
+exports.createFamilySpace = onCall(
+  { region: 'us-central1', memory: '256MiB', timeoutSeconds: 60 },
+  async (request) => {
+    const familyName = cleanFamilyName(request.data?.name);
+    if (!familyName) {
+      throw new HttpsError('invalid-argument', 'Enter a family space name between 2 and 80 characters.');
+    }
+
+    const { userId, email, displayName } = await requireAuthoritativelyVerifiedAccount(request, getAuth());
+    const userRef = db.doc(`users/${userId}`);
+    const consentRef = userRef.collection('consents').doc(PARENT_CONSENT_VERSION);
+    const familyId = await db.runTransaction(async (transaction) => {
+      const [userSnapshot, consentSnapshot] = await Promise.all([
+        transaction.get(userRef),
+        transaction.get(consentRef),
+      ]);
+      const existingFamilyId = userSnapshot.exists && typeof userSnapshot.get('familyId') === 'string'
+        ? userSnapshot.get('familyId').trim()
+        : '';
+      const now = Timestamp.now();
+
+      if (existingFamilyId) {
+        const familyRef = db.doc(`families/${existingFamilyId}`);
+        const memberRef = familyRef.collection('members').doc(userId);
+        const [familySnapshot, memberSnapshot] = await Promise.all([
+          transaction.get(familyRef),
+          transaction.get(memberRef),
+        ]);
+        if (!familySnapshot.exists
+          || familySnapshot.get('ownerId') !== userId
+          || !memberSnapshot.exists
+          || memberSnapshot.get('role') !== 'owner') {
+          throw new HttpsError('permission-denied', 'This account cannot rename that family space.');
+        }
+        transaction.update(familyRef, { name: familyName, updatedAt: now });
+        return existingFamilyId;
+      }
+
+      const familyRef = db.collection('families').doc();
+      const memberRef = familyRef.collection('members').doc(userId);
+      transaction.set(familyRef, {
+        name: familyName,
+        ownerId: userId,
+        schemaVersion: 1,
+        createdAt: now,
+        updatedAt: now,
+      });
+      transaction.set(memberRef, {
+        userId,
+        role: 'owner',
+        displayName,
+        email,
+        joinedAt: now,
+      });
+      transaction.set(userRef, {
+        userId,
+        displayName,
+        email,
+        familyId: familyRef.id,
+        activeProfileId: null,
+        onboardingComplete: false,
+        createdAt: userSnapshot.exists && userSnapshot.get('createdAt') instanceof Timestamp
+          ? userSnapshot.get('createdAt')
+          : now,
+        updatedAt: now,
+      });
+      if (!consentSnapshot.exists) {
+        transaction.set(consentRef, {
+          userId,
+          version: PARENT_CONSENT_VERSION,
+          guardianConfirmed: true,
+          source: 'onboarding',
+          acceptedAt: now,
+        });
+      }
+
+      return familyRef.id;
+    });
+
+    return { ok: true, familyId };
+  },
+);
 
 exports.createFamilyInvite = onCall(
   { region: 'us-central1', memory: '256MiB', timeoutSeconds: 60 },

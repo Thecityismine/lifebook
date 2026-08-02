@@ -8,6 +8,7 @@ import {
 import { httpsCallable } from 'firebase/functions';
 
 import { getFirebaseAuth, getFirebaseFirestore, getFirebaseFunctions } from '@/services/firebase';
+import { isConfirmedSetupMissing } from '@/services/auth-flow-policy';
 
 export type ParentSetup = {
   familyId: string | null;
@@ -66,18 +67,24 @@ function requireVerifiedParent() {
 export function subscribeToParentSetup(
   userId: string,
   onValue: (setup: ParentSetup | null) => void,
-  onError: () => void,
+  onError: (code: string) => void,
 ): Unsubscribe {
   const db = getFirebaseFirestore();
   if (!db) {
-    onError();
+    onError('firestore/not-configured');
     return () => undefined;
   }
 
   return onSnapshot(
     doc(db, 'users', userId),
+    { includeMetadataChanges: true },
     (snapshot) => {
       if (!snapshot.exists()) {
+        // An empty local cache is not proof that onboarding data is missing.
+        // Wait for Firestore to confirm the absence from the server.
+        if (!isConfirmedSetupMissing(snapshot.exists(), snapshot.metadata.fromCache)) {
+          return;
+        }
         onValue(null);
         return;
       }
@@ -89,7 +96,7 @@ export function subscribeToParentSetup(
         onboardingComplete: data.onboardingComplete === true,
       });
     },
-    onError,
+    (error) => onError(error.code),
   );
 }
 

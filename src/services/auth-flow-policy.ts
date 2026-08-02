@@ -19,6 +19,13 @@ export type SetupReconciliation = {
   pendingConfirmation: ParentSetupState | null;
 };
 
+type CachedParentSetup = {
+  version: 1;
+  familyId: string;
+  activeProfileId: string;
+  onboardingComplete: true;
+};
+
 export function authSetupIdentity(user: AuthUserIdentity | null): AuthSetupIdentity {
   return {
     userId: user?.uid ?? null,
@@ -33,11 +40,16 @@ export function shouldRestartSetupSubscription(
   return previous.userId !== next.userId || previous.emailVerified !== next.emailVerified;
 }
 
+export function isConfirmedSetupMissing(snapshotExists: boolean, fromCache: boolean): boolean {
+  return !snapshotExists && !fromCache;
+}
+
 export function requiredSetupRoute(
   setup: ParentSetupState | null,
   setupLoading: boolean,
+  setupError = false,
 ): '/family' | '/child' | null {
-  if (setupLoading) {
+  if (setupLoading || setupError) {
     return null;
   }
 
@@ -73,4 +85,44 @@ export function reconcileConfirmedSetup(
     setup: pendingConfirmation,
     pendingConfirmation,
   };
+}
+
+export function serializeCompletedSetup(setup: ParentSetupState | null): string | null {
+  if (!setup?.onboardingComplete || !setup.familyId || !setup.activeProfileId) {
+    return null;
+  }
+
+  const cached: CachedParentSetup = {
+    version: 1,
+    familyId: setup.familyId,
+    activeProfileId: setup.activeProfileId,
+    onboardingComplete: true,
+  };
+  return JSON.stringify(cached);
+}
+
+export function parseCompletedSetup(value: string | null): ParentSetupState | null {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    const cached = JSON.parse(value) as Partial<CachedParentSetup>;
+    if (cached.version !== 1
+      || cached.onboardingComplete !== true
+      || typeof cached.familyId !== 'string'
+      || !cached.familyId
+      || typeof cached.activeProfileId !== 'string'
+      || !cached.activeProfileId) {
+      return null;
+    }
+
+    return {
+      familyId: cached.familyId,
+      activeProfileId: cached.activeProfileId,
+      onboardingComplete: true,
+    };
+  } catch {
+    return null;
+  }
 }

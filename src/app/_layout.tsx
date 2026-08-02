@@ -1,7 +1,7 @@
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppColors } from '@/constants/theme';
 import { AuthProvider, useAuthSession } from '@/providers/auth-provider';
@@ -29,7 +29,14 @@ const protectedDetailRoutes = new Set([
 function AppNavigator() {
   const router = useRouter();
   const segments = useSegments();
-  const { user, initializing, setup, setupLoading } = useAuthSession();
+  const {
+    user,
+    initializing,
+    setup,
+    setupLoading,
+    setupError,
+    refreshSetup,
+  } = useAuthSession();
   const firstSegment = segments[0] || 'index';
 
   useEffect(() => {
@@ -55,7 +62,11 @@ function AppNavigator() {
       return;
     }
 
-    const setupRoute = requiredSetupRoute(setup, setupLoading);
+    if (setupError && !setup) {
+      return;
+    }
+
+    const setupRoute = requiredSetupRoute(setup, setupLoading, setupError);
     if (setupRoute === '/family') {
       if (firstSegment !== 'family') {
         router.replace('/family');
@@ -77,13 +88,32 @@ function AppNavigator() {
     if (firstSegment !== '(tabs)' && !protectedDetailRoutes.has(firstSegment)) {
       router.replace('/home');
     }
-  }, [firstSegment, initializing, router, setup, setupLoading, user]);
+  }, [firstSegment, initializing, router, setup, setupError, setupLoading, user]);
 
-  if ((initializing || setupLoading) && !publicRoutes.has(firstSegment)) {
+  if ((initializing || (user?.emailVerified && setupLoading))
+    && !alwaysAccessibleRoutes.has(firstSegment)) {
     return (
       <View style={styles.privateLoading}>
         <ActivityIndicator color={AppColors.violet} />
         <Text style={styles.privateLoadingText}>Opening your private LifeBook…</Text>
+      </View>
+    );
+  }
+
+  if (user?.emailVerified && setupError && !setup
+    && !alwaysAccessibleRoutes.has(firstSegment)) {
+    return (
+      <View style={styles.setupError}>
+        <Text style={styles.setupErrorTitle}>We couldn&apos;t open your family setup.</Text>
+        <Text style={styles.setupErrorText}>
+          Your existing LifeBook has not been changed. Check your connection and try again.
+        </Text>
+        <Pressable
+          accessibilityRole="button"
+          onPress={refreshSetup}
+          style={({ pressed }) => [styles.retryButton, pressed && styles.retryButtonPressed]}>
+          <Text style={styles.retryButtonText}>Try again</Text>
+        </Pressable>
       </View>
     );
   }
@@ -138,6 +168,45 @@ const styles = StyleSheet.create({
     color: AppColors.inkMuted,
     fontSize: 14,
     fontWeight: '600',
+  },
+  setupError: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    paddingHorizontal: 28,
+    backgroundColor: AppColors.cloud,
+  },
+  setupErrorTitle: {
+    color: AppColors.ink,
+    fontSize: 21,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  setupErrorText: {
+    maxWidth: 420,
+    color: AppColors.inkMuted,
+    fontSize: 15,
+    lineHeight: 22,
+    textAlign: 'center',
+  },
+  retryButton: {
+    minHeight: 48,
+    minWidth: 140,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+    paddingHorizontal: 24,
+    borderRadius: 24,
+    backgroundColor: AppColors.violet,
+  },
+  retryButtonPressed: {
+    opacity: 0.82,
+  },
+  retryButtonText: {
+    color: AppColors.onAccent,
+    fontSize: 15,
+    fontWeight: '800',
   },
 });
 

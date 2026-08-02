@@ -65,6 +65,7 @@ export default function RootLayout() {
             title: 'Add',
             tabBarAccessibilityLabel: 'Add something to LifeBook',
             tabBarIcon: ({ focused }) => <AddIcon focused={focused} />,
+            tabBarLabel: () => null,
           }}
         />
         <Tabs.Screen

@@ -1,20 +1,17 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getApp, getApps, initializeApp, type FirebaseApp } from 'firebase/app';
-import * as FirebaseAuth from 'firebase/auth';
+import type { Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getFunctions, type Functions } from 'firebase/functions';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
-import { Platform } from 'react-native';
 
 import { getFirebaseOptions, isFirebaseStorageEnabled } from '@/config/firebase';
+import { initializeFirebaseAuth } from '@/services/firebase-auth';
 
 let cachedApp: FirebaseApp | null = null;
-let cachedAuth: FirebaseAuth.Auth | null = null;
+let cachedAuth: Auth | null = null;
 let cachedFirestore: Firestore | null = null;
 let cachedStorage: FirebaseStorage | null = null;
 let cachedFunctions: Functions | null = null;
-
-type ReactNativePersistenceFactory = (storage: typeof AsyncStorage) => FirebaseAuth.Persistence;
 
 export function getFirebaseApp(): FirebaseApp | null {
   if (cachedApp) {
@@ -62,7 +59,7 @@ export function getFirebaseStorage(): FirebaseStorage | null {
   return cachedStorage;
 }
 
-export function getFirebaseAuth(): FirebaseAuth.Auth | null {
+export function getFirebaseAuth(): Auth | null {
   if (cachedAuth) {
     return cachedAuth;
   }
@@ -72,19 +69,7 @@ export function getFirebaseAuth(): FirebaseAuth.Auth | null {
     return null;
   }
 
-  try {
-    const persistence = Platform.OS === 'web'
-      ? FirebaseAuth.browserLocalPersistence
-      : (FirebaseAuth as typeof FirebaseAuth & { getReactNativePersistence: ReactNativePersistenceFactory })
-          .getReactNativePersistence(AsyncStorage);
-
-    cachedAuth = FirebaseAuth.initializeAuth(app, {
-      persistence,
-    });
-  } catch {
-    cachedAuth = FirebaseAuth.getAuth(app);
-  }
-
+  cachedAuth = initializeFirebaseAuth(app);
   return cachedAuth;
 }
 

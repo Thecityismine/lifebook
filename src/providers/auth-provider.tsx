@@ -10,6 +10,7 @@ import {
   shouldRestartSetupSubscription,
   type AuthSetupIdentity,
 } from '@/services/auth-flow-policy';
+import { readCachedParentSetup, writeCachedParentSetup } from '@/services/parent-setup-cache';
 
 type AuthContextValue = {
   user: User | null;
@@ -18,6 +19,7 @@ type AuthContextValue = {
   setupLoading: boolean;
   setupError: boolean;
   refreshUser: () => Promise<void>;
+  refreshSetup: () => void;
   confirmFamilyCreated: (familyId: string) => void;
   confirmManagedProfileCreated: (familyId: string, profileId: string) => void;
 };
@@ -34,14 +36,47 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const setupUnsubscribe = useRef<(() => void) | null>(null);
   const setupIdentity = useRef<AuthSetupIdentity>(authSetupIdentity(null));
   const setupConfirmation = useRef<ParentSetup | null>(null);
+  const setupSubscriptionRevision = useRef(0);
   const [, setRevision] = useState(0);
 
-  const applySetupObservation = useCallback((nextSetup: ParentSetup | null) => {
-    const reconciliation = reconcileConfirmedSetup(nextSetup, setupConfirmation.current);
-    setupConfirmation.current = reconciliation.pendingConfirmation;
-    setSetup(reconciliation.setup);
-    setSetupError(false);
-    setSetupLoading(false);
+  const subscribeToSetup = useCallback((userId: string, useCachedSetup: boolean) => {
+    setupUnsubscribe.current?.();
+    const revision = ++setupSubscriptionRevision.current;
+    let observedLiveSetup = false;
+
+    if (useCachedSetup) {
+      void readCachedParentSetup(userId).then((cachedSetup) => {
+        if (revision !== setupSubscriptionRevision.current || observedLiveSetup || !cachedSetup) {
+          return;
+        }
+        setSetup((currentSetup) => currentSetup ?? cachedSetup);
+        setSetupLoading(false);
+      });
+    }
+
+    setupUnsubscribe.current = subscribeToParentSetup(
+      userId,
+      (nextSetup) => {
+        if (revision !== setupSubscriptionRevision.current) {
+          return;
+        }
+        observedLiveSetup = true;
+        const reconciliation = reconcileConfirmedSetup(nextSetup, setupConfirmation.current);
+        setupConfirmation.current = reconciliation.pendingConfirmation;
+        setSetup(reconciliation.setup);
+        setSetupError(false);
+        setSetupLoading(false);
+        void writeCachedParentSetup(userId, reconciliation.setup);
+      },
+      (code) => {
+        if (revision !== setupSubscriptionRevision.current) {
+          return;
+        }
+        console.warn('[auth-setup] Unable to load parent setup.', { code });
+        setSetupError(true);
+        setSetupLoading(false);
+      },
+    );
   }, []);
 
   useEffect(() => {
@@ -62,6 +97,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
       setupUnsubscribe.current?.();
       setupUnsubscribe.current = null;
+      setupSubscriptionRevision.current += 1;
       setupIdentity.current = nextSetupIdentity;
       setupConfirmation.current = null;
       setSetup(null);
@@ -69,14 +105,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
       if (nextUser?.emailVerified) {
         setSetupLoading(true);
-        setupUnsubscribe.current = subscribeToParentSetup(
-          nextUser.uid,
-          applySetupObservation,
-          () => {
-            setSetupError(true);
-            setSetupLoading(false);
-          },
-        );
+        subscribeToSetup(nextUser.uid, true);
       } else {
         setSetupLoading(false);
       }
@@ -85,10 +114,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
     });
 
     return () => {
+      setupSubscriptionRevision.current += 1;
       setupUnsubscribe.current?.();
       unsubscribe();
     };
-  }, [applySetupObservation, auth]);
+  }, [auth, subscribeToSetup]);
 
   const refreshUser = useCallback(async () => {
     const currentUser = getFirebaseAuth()?.currentUser;
@@ -100,6 +130,17 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setUser(currentUser);
     setRevision((value) => value + 1);
   }, []);
+
+  const refreshSetup = useCallback(() => {
+    const currentUser = auth?.currentUser;
+    if (!currentUser?.emailVerified) {
+      return;
+    }
+
+    setSetupError(false);
+    setSetupLoading(true);
+    subscribeToSetup(currentUser.uid, true);
+  }, [auth, subscribeToSetup]);
 
   const confirmFamilyCreated = useCallback((familyId: string) => {
     const currentUser = auth?.currentUser;
@@ -117,16 +158,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setSetupError(false);
     setSetupLoading(false);
 
-    setupUnsubscribe.current?.();
-    setupUnsubscribe.current = subscribeToParentSetup(
-      currentUser.uid,
-      applySetupObservation,
-      () => {
-        setSetupError(true);
-        setSetupLoading(false);
-      },
-    );
-  }, [applySetupObservation, auth]);
+    subscribeToSetup(currentUser.uid, false);
+  }, [auth, subscribeToSetup]);
 
   const confirmManagedProfileCreated = useCallback((familyId: string, profileId: string) => {
     const confirmedSetup: ParentSetup = {
@@ -138,7 +171,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setSetup(confirmedSetup);
     setSetupError(false);
     setSetupLoading(false);
-  }, []);
+    const currentUser = auth?.currentUser;
+    if (currentUser) {
+      void writeCachedParentSetup(currentUser.uid, confirmedSetup);
+    }
+  }, [auth]);
 
   const value = useMemo(
     () => ({
@@ -148,6 +185,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       setupLoading,
       setupError,
       refreshUser,
+      refreshSetup,
       confirmFamilyCreated,
       confirmManagedProfileCreated,
     }),
@@ -158,6 +196,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       setupLoading,
       setupError,
       refreshUser,
+      refreshSetup,
       confirmFamilyCreated,
       confirmManagedProfileCreated,
     ],

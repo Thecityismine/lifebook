@@ -1,15 +1,19 @@
 import type { FirebaseOptions } from 'firebase/app';
 
+function normalizeEnvironmentValue(value: string | undefined) {
+  return value?.trim();
+}
+
 const requiredFirebaseEnvironment = {
-  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
+  apiKey: normalizeEnvironmentValue(process.env.EXPO_PUBLIC_FIREBASE_API_KEY),
+  authDomain: normalizeEnvironmentValue(process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN),
+  projectId: normalizeEnvironmentValue(process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID),
+  storageBucket: normalizeEnvironmentValue(process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET),
+  messagingSenderId: normalizeEnvironmentValue(process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID),
+  appId: normalizeEnvironmentValue(process.env.EXPO_PUBLIC_FIREBASE_APP_ID),
 } as const;
 
-const firebaseMeasurementId = process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID;
+const firebaseMeasurementId = normalizeEnvironmentValue(process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID);
 
 type FirebaseEnvironmentKey = keyof typeof requiredFirebaseEnvironment;
 
@@ -18,7 +22,7 @@ export const missingFirebaseEnvironmentKeys = (Object.keys(requiredFirebaseEnvir
 
 export const isFirebaseConfigured = missingFirebaseEnvironmentKeys.length === 0;
 export const isFirebaseStorageEnabled =
-  process.env.EXPO_PUBLIC_FIREBASE_STORAGE_ENABLED?.trim().toLowerCase() === 'true';
+  normalizeEnvironmentValue(process.env.EXPO_PUBLIC_FIREBASE_STORAGE_ENABLED)?.toLowerCase() === 'true';
 
 export function getFirebaseOptions(): FirebaseOptions | null {
   if (!isFirebaseConfigured) {

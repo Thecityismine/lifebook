@@ -64,6 +64,8 @@ export default function EditPersonScreen() {
   const [lastName, setLastName] = useState('');
   const [nickname, setNickname] = useState('');
   const [birthday, setBirthday] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [address, setAddress] = useState('');
   const [notes, setNotes] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [customTag, setCustomTag] = useState('');
@@ -101,6 +103,8 @@ export default function EditPersonScreen() {
           setLastName(nextPerson.lastName);
           setNickname(nextPerson.nickname);
           setBirthday(nextPerson.birthday);
+          setPhoneNumber(nextPerson.phoneNumber);
+          setAddress(nextPerson.address);
           setNotes(nextPerson.notes);
           setTags(nextPerson.tags);
         }
@@ -188,7 +192,7 @@ export default function EditPersonScreen() {
     setError('');
     const personResult = await savePerson(
       familyId,
-      { firstName, lastName, nickname, birthday, notes, tags },
+      { firstName, lastName, nickname, birthday, phoneNumber, address, notes, tags },
       personId || undefined,
     );
 
@@ -294,6 +298,26 @@ export default function EditPersonScreen() {
               maxLength={10}
               value={birthday}
               onChangeText={setBirthday}
+            />
+            <FormField
+              label="Phone number"
+              placeholder="Phone number (optional)"
+              autoComplete="tel"
+              keyboardType="phone-pad"
+              maxLength={40}
+              textContentType="telephoneNumber"
+              value={phoneNumber}
+              onChangeText={setPhoneNumber}
+            />
+            <FormField
+              label="Address"
+              placeholder="Street, city, state, and postal code"
+              autoCapitalize="words"
+              maxLength={300}
+              multiline
+              numberOfLines={3}
+              value={address}
+              onChangeText={setAddress}
             />
             <FormField
               label="Private notes"

@@ -19,8 +19,10 @@ function TabIcon({ name, color, focused }: { name: IconName; color: ColorValue; 
 
 function AddIcon({ focused }: { focused: boolean }) {
   return (
-    <View style={[styles.addButton, focused && styles.addButtonActive]}>
-      <Ionicons name="add" size={30} color={AppColors.onAccent} />
+    <View style={styles.addButtonDock}>
+      <View style={[styles.addButton, focused && styles.addButtonActive]}>
+        <Ionicons name="add" size={30} color={AppColors.onAccent} />
+      </View>
     </View>
   );
 }
@@ -120,16 +122,24 @@ const styles = StyleSheet.create({
   iconFrameActive: {
     backgroundColor: AppColors.violetSoft,
   },
+  addButtonDock: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 66,
+    height: 66,
+    marginTop: -32,
+    borderRadius: 33,
+    backgroundColor: AppColors.paper,
+  },
   addButton: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 52,
-    height: 52,
-    marginTop: -20,
-    borderRadius: 26,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     backgroundColor: AppColors.violet,
-    borderWidth: 4,
-    borderColor: AppColors.onDark,
+    borderWidth: 2,
+    borderColor: AppColors.violet,
     ...Shadow.floating,
   },
   addButtonActive: {

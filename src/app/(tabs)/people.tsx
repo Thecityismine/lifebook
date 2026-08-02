@@ -87,7 +87,7 @@ export default function PeopleScreen() {
         return true;
       }
 
-      return [personDisplayName(person), person.nickname, person.notes, ...person.tags]
+      return [personDisplayName(person), person.nickname, person.phoneNumber, person.address, person.notes, ...person.tags]
         .join(' ')
         .toLocaleLowerCase()
         .includes(searchKey);

@@ -189,6 +189,30 @@ export default function PersonScreen() {
             </View>
           </View>
           <View style={styles.divider} />
+          <View style={styles.detailRowNoPadding}>
+            <View style={[styles.detailIcon, { backgroundColor: AppColors.skySoft }]}>
+              <Ionicons name="call-outline" size={20} color={AppColors.sky} />
+            </View>
+            <View style={styles.detailCopy}>
+              <Text style={styles.detailLabel}>Phone number</Text>
+              <Text style={person.phoneNumber ? styles.detailValue : styles.emptyValue}>
+                {person.phoneNumber || 'Not added yet'}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.divider} />
+          <View style={styles.detailRowNoPadding}>
+            <View style={[styles.detailIcon, { backgroundColor: AppColors.mintSoft }]}>
+              <Ionicons name="location-outline" size={20} color={AppColors.mint} />
+            </View>
+            <View style={styles.detailCopy}>
+              <Text style={styles.detailLabel}>Address</Text>
+              <Text style={person.address ? styles.addressValue : styles.emptyValue}>
+                {person.address || 'Not added yet'}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.divider} />
           <View style={styles.notesBlock}>
             <Text style={styles.detailLabel}>Private family notes</Text>
             <Text style={person.notes ? styles.notes : styles.emptyValue}>{person.notes || 'No notes yet.'}</Text>
@@ -325,10 +349,12 @@ const styles = StyleSheet.create({
   sectionHeadingCopy: { flex: 1, gap: 4 },
   helper: { color: AppColors.inkMuted, fontSize: 13, lineHeight: 19 },
   detailRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingTop: Spacing.lg },
+  detailRowNoPadding: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   detailIcon: { alignItems: 'center', justifyContent: 'center', width: 44, height: 44, borderRadius: Radius.md },
   detailCopy: { flex: 1 },
   detailLabel: { color: AppColors.inkMuted, fontSize: 12, fontWeight: '700', marginBottom: 3 },
   detailValue: { color: AppColors.ink, fontSize: 15, fontWeight: '700' },
+  addressValue: { color: AppColors.ink, fontSize: 14, fontWeight: '600', lineHeight: 20 },
   emptyValue: { color: AppColors.slate, fontSize: 14, fontStyle: 'italic' },
   divider: { height: StyleSheet.hairlineWidth, backgroundColor: AppColors.line, marginVertical: Spacing.lg },
   notesBlock: { gap: Spacing.sm },

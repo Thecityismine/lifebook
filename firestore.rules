@@ -119,6 +119,8 @@ service cloud.firestore {
           'lastName',
           'nickname',
           'birthday',
+          'phoneNumber',
+          'address',
           'notes',
           'tags',
           'photoUrl',
@@ -140,6 +142,10 @@ service cloud.firestore {
         && data.birthday is string
         && data.birthday.size() <= 10
         && (data.birthday == '' || data.birthday.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'))
+        && data.get('phoneNumber', '') is string
+        && data.get('phoneNumber', '').size() <= 40
+        && data.get('address', '') is string
+        && data.get('address', '').size() <= 300
         && data.notes is string
         && data.notes.size() <= 2000
         && data.tags is list
@@ -495,6 +501,8 @@ service cloud.firestore {
             'lastName',
             'nickname',
             'birthday',
+            'phoneNumber',
+            'address',
             'notes',
             'tags',
             'photoUrl',

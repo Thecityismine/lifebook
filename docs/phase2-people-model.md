@@ -8,6 +8,7 @@ People are family-owned records. Relationships are separate records so the same 
 
 - first and last name
 - optional nickname and birthday
+- optional phone number and address
 - private family notes
 - standard and custom tags
 - optional photo URL and private Storage path

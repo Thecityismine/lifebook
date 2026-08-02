@@ -24,6 +24,8 @@ function personData() {
     lastName: 'Lee',
     nickname: 'Jordy',
     birthday: '2015-04-12',
+    phoneNumber: '+1 (555) 010-2026',
+    address: '123 Memory Lane, Springfield',
     notes: 'Met through school.',
     tags: ['Friend', 'School'],
     photoUrl: null,
@@ -164,6 +166,28 @@ test('owner can create, read, archive, and restore a family person', async () =>
   await assertSucceeds(updateDoc(personRef, { archivedAt: serverTimestamp(), updatedAt: serverTimestamp() }));
   await assertSucceeds(updateDoc(personRef, { archivedAt: null, updatedAt: serverTimestamp() }));
   await assertFails(deleteDoc(personRef));
+});
+
+test('person contact fields are bounded while legacy records remain editable', async () => {
+  const db = testEnvironment.authenticatedContext(ownerId, {
+    email: 'owner-a@example.com', email_verified: true,
+  }).firestore();
+  const { phoneNumber: _phoneNumber, address: _address, ...legacyPerson } = personData();
+  const legacyRef = doc(db, 'families', familyId, 'people', 'legacy-person');
+
+  await assertSucceeds(setDoc(legacyRef, legacyPerson));
+  await assertSucceeds(updateDoc(legacyRef, { archivedAt: serverTimestamp(), updatedAt: serverTimestamp() }));
+  await assertSucceeds(updateDoc(legacyRef, {
+    phoneNumber: '+1 555 010 2040',
+    address: '456 Family Avenue',
+    updatedAt: serverTimestamp(),
+  }));
+  await assertFails(setDoc(doc(db, 'families', familyId, 'people', 'long-phone'), {
+    ...personData(), phoneNumber: '1'.repeat(41),
+  }));
+  await assertFails(setDoc(doc(db, 'families', familyId, 'people', 'long-address'), {
+    ...personData(), address: 'A'.repeat(301),
+  }));
 });
 
 test('owner can save a relationship only for a managed profile in the same family', async () => {

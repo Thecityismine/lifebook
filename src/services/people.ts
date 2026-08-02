@@ -23,6 +23,8 @@ export type PersonRecord = {
   lastName: string;
   nickname: string;
   birthday: string;
+  phoneNumber: string;
+  address: string;
   notes: string;
   tags: string[];
   photoUrl: string | null;
@@ -33,7 +35,7 @@ export type PersonRecord = {
 
 export type PersonInput = Pick<
   PersonRecord,
-  'firstName' | 'lastName' | 'nickname' | 'birthday' | 'notes' | 'tags'
+  'firstName' | 'lastName' | 'nickname' | 'birthday' | 'phoneNumber' | 'address' | 'notes' | 'tags'
 >;
 
 export type ManagedProfileSummary = {
@@ -109,6 +111,8 @@ function personFromSnapshot(id: string, data: Record<string, unknown>): PersonRe
     lastName: typeof data.lastName === 'string' ? data.lastName : '',
     nickname: typeof data.nickname === 'string' ? data.nickname : '',
     birthday: typeof data.birthday === 'string' ? data.birthday : '',
+    phoneNumber: typeof data.phoneNumber === 'string' ? data.phoneNumber : '',
+    address: typeof data.address === 'string' ? data.address : '',
     notes: typeof data.notes === 'string' ? data.notes : '',
     tags: Array.isArray(data.tags) ? data.tags.filter((tag): tag is string => typeof tag === 'string') : [],
     photoUrl: typeof data.photoUrl === 'string' ? data.photoUrl : null,
@@ -241,6 +245,8 @@ export async function savePerson(
     lastName: input.lastName.trim(),
     nickname: input.nickname.trim(),
     birthday: input.birthday.trim(),
+    phoneNumber: input.phoneNumber.trim(),
+    address: input.address.trim(),
     notes: input.notes.trim(),
     tags: cleanTags(input.tags),
   };

@@ -16,7 +16,7 @@ Firebase client configuration identifies the project but does not grant data acc
 - `npx tsc --noEmit` — strict TypeScript validation
 - `npx expo-doctor` — Expo dependency and configuration checks
 - `npx expo export --platform all` — Android, iOS, and static-web production exports
-- `npm run test:rules` — Firestore and Storage authorization tests for People and Memories; requires Java 21+
+- `npm run test:rules` — Firestore and Storage authorization tests for People, Memories, Chapters, and Reminders; requires Java 21+
 - `npm run vercel-build` — Vercel static-web build
 
 ## Firebase deployment
@@ -31,3 +31,4 @@ The data models are documented in:
 - [`docs/phase2-people-model.md`](docs/phase2-people-model.md)
 - [`docs/phase3-memories-model.md`](docs/phase3-memories-model.md)
 - [`docs/phase4-chapters-model.md`](docs/phase4-chapters-model.md)
+- [`docs/phase5-reminders-model.md`](docs/phase5-reminders-model.md)

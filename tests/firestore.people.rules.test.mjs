@@ -12,6 +12,7 @@ const profileId = 'profile-a';
 const personId = 'person-a';
 const memoryId = 'memory-a';
 const chapterId = 'chapter-a';
+const reminderId = 'reminder-a';
 let testEnvironment;
 
 function personData() {
@@ -62,6 +63,25 @@ function chapterData() {
     iconKey: 'school',
     colorKey: 'violet',
     memoryIds: [memoryId],
+    archivedAt: null,
+    createdBy: ownerId,
+    schemaVersion: 1,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  };
+}
+
+function reminderData() {
+  return {
+    familyId,
+    profileId,
+    title: 'Dentist appointment',
+    notes: 'Bring the insurance card.',
+    dueOn: '2026-08-12',
+    timeOfDay: '15:30',
+    kind: 'appointment',
+    personId,
+    completedAt: null,
     archivedAt: null,
     createdBy: ownerId,
     schemaVersion: 1,
@@ -263,5 +283,42 @@ test('chapter records deny invalid-profile and cross-family access', async () =>
   await assertFails(setDoc(doc(outsiderDb, 'families', familyId, 'chapters', 'intruder-chapter'), {
     ...chapterData(),
     createdBy: outsiderId,
+  }));
+});
+
+test('owner can create, read, edit, complete, archive, and restore a profile reminder', async () => {
+  const db = testEnvironment.authenticatedContext(ownerId, {
+    email: 'owner-a@example.com', email_verified: true,
+  }).firestore();
+  const reminderRef = doc(db, 'families', familyId, 'reminders', reminderId);
+
+  await assertSucceeds(setDoc(reminderRef, reminderData()));
+  await assertSucceeds(getDoc(reminderRef));
+  await assertSucceeds(updateDoc(reminderRef, {
+    title: 'Our dentist appointment', completedAt: serverTimestamp(), updatedAt: serverTimestamp(),
+  }));
+  await assertSucceeds(updateDoc(reminderRef, {
+    completedAt: null, archivedAt: serverTimestamp(), updatedAt: serverTimestamp(),
+  }));
+  await assertSucceeds(updateDoc(reminderRef, { archivedAt: null, updatedAt: serverTimestamp() }));
+  await assertFails(updateDoc(reminderRef, { profileId: 'another-profile', updatedAt: serverTimestamp() }));
+  await assertFails(deleteDoc(reminderRef));
+});
+
+test('reminder records deny invalid-profile and cross-family access', async () => {
+  const ownerDb = testEnvironment.authenticatedContext(ownerId, {
+    email: 'owner-a@example.com', email_verified: true,
+  }).firestore();
+  await assertSucceeds(setDoc(doc(ownerDb, 'families', familyId, 'reminders', reminderId), reminderData()));
+  await assertFails(setDoc(doc(ownerDb, 'families', familyId, 'reminders', 'missing-profile'), {
+    ...reminderData(), profileId: 'missing-profile',
+  }));
+
+  const outsiderDb = testEnvironment.authenticatedContext(outsiderId, {
+    email: 'owner-b@example.com', email_verified: true,
+  }).firestore();
+  await assertFails(getDoc(doc(outsiderDb, 'families', familyId, 'reminders', reminderId)));
+  await assertFails(setDoc(doc(outsiderDb, 'families', familyId, 'reminders', 'intruder-reminder'), {
+    ...reminderData(), createdBy: outsiderId,
   }));
 });

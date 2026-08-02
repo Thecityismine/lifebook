@@ -6,13 +6,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/avatar';
 import { SectionHeader } from '@/components/section-header';
+import { reminderKind } from '@/constants/reminders';
 import { AppColors, FontFamily, MaxContentWidth, Radius, Shadow, Spacing } from '@/constants/theme';
 import { useAuthSession } from '@/providers/auth-provider';
 import { signOutParent } from '@/services/auth';
 import { subscribeToChapters, type ChapterRecord } from '@/services/chapters';
 import { getFamilySummary, type FamilySummary } from '@/services/family';
 import { memoryDateLabel, subscribeToMemories, type MemoryRecord } from '@/services/memories';
-import { personInitials, subscribeToPeople, type PersonRecord } from '@/services/people';
+import { personDisplayName, personInitials, subscribeToPeople, type PersonRecord } from '@/services/people';
+import { reminderRelativeLabel, subscribeToReminders, type ReminderRecord } from '@/services/reminders';
 
 function QuickCard({
   icon,
@@ -51,6 +53,7 @@ export default function HomeScreen() {
   const [people, setPeople] = useState<PersonRecord[]>([]);
   const [memories, setMemories] = useState<MemoryRecord[]>([]);
   const [chapters, setChapters] = useState<ChapterRecord[]>([]);
+  const [reminders, setReminders] = useState<ReminderRecord[]>([]);
   const profileName = summary?.profileName || 'Your family';
   const accountInitials = (user?.displayName || user?.email || 'Parent')
     .split(/[\s@]+/)
@@ -92,16 +95,22 @@ export default function HomeScreen() {
     const unsubscribePeople = subscribeToPeople(setup.familyId, setPeople, ignoreError);
     const unsubscribeMemories = subscribeToMemories(setup.familyId, setup.activeProfileId, setMemories, ignoreError);
     const unsubscribeChapters = subscribeToChapters(setup.familyId, setup.activeProfileId, setChapters, ignoreError);
+    const unsubscribeReminders = subscribeToReminders(setup.familyId, setup.activeProfileId, setReminders, ignoreError);
     return () => {
       unsubscribePeople();
       unsubscribeMemories();
       unsubscribeChapters();
+      unsubscribeReminders();
     };
   }, [setup?.activeProfileId, setup?.familyId]);
 
   const activePeople = useMemo(() => people.filter((person) => !person.archivedAt), [people]);
   const activeMemories = useMemo(() => memories.filter((memory) => !memory.archivedAt), [memories]);
   const activeChapters = useMemo(() => chapters.filter((chapter) => !chapter.archivedAt), [chapters]);
+  const upcomingReminders = useMemo(
+    () => reminders.filter((reminder) => !reminder.archivedAt && !reminder.completedAt).slice(0, 2),
+    [reminders],
+  );
   const latestMemory = activeMemories[0] || null;
   const latestPeople = useMemo(() => {
     if (!latestMemory) {
@@ -201,29 +210,23 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.section}>
-          <SectionHeader title="Coming up" action="See all" />
+          <SectionHeader title="Coming up" action={upcomingReminders.length ? 'See all' : 'Add'} onPress={() => router.push(upcomingReminders.length ? '/reminders' : '/edit-reminder')} />
           <View style={styles.listCard}>
-            <View style={styles.eventRow}>
-              <View style={[styles.eventIcon, { backgroundColor: AppColors.sunSoft }]}>
-                <Ionicons name="gift" size={22} color={AppColors.sun} />
-              </View>
-              <View style={styles.eventCopy}>
-                <Text style={styles.eventTitle}>Ethan’s birthday</Text>
-                <Text style={styles.eventDetail}>In 3 days · August 4</Text>
-              </View>
-              <Avatar initials="EJ" color={AppColors.sky} size={38} />
-            </View>
-            <View style={styles.divider} />
-            <View style={styles.eventRow}>
-              <View style={[styles.eventIcon, { backgroundColor: AppColors.mintSoft }]}>
-                <Ionicons name="football" size={22} color={AppColors.mint} />
-              </View>
-              <View style={styles.eventCopy}>
-                <Text style={styles.eventTitle}>Soccer practice</Text>
-                <Text style={styles.eventDetail}>Saturday · 10:00 AM</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={19} color={AppColors.slate} />
-            </View>
+            {upcomingReminders.length === 0 ? (
+              <Pressable onPress={() => router.push('/edit-reminder')} style={({ pressed }) => [styles.emptyEvent, pressed && styles.pressed]}>
+                <View style={[styles.eventIcon, { backgroundColor: AppColors.sunSoft }]}><Ionicons name="notifications-outline" size={22} color={AppColors.sun} /></View>
+                <View style={styles.eventCopy}><Text style={styles.eventTitle}>Nothing to remember yet</Text><Text style={styles.eventDetail}>Add a birthday, appointment, or important moment.</Text></View>
+                <Ionicons name="add-circle" size={23} color={AppColors.violet} />
+              </Pressable>
+            ) : upcomingReminders.map((reminder, index) => {
+              const visual = reminderKind(reminder.kind);
+              const linkedPerson = people.find((person) => person.id === reminder.personId);
+              return <View key={reminder.id}>{index > 0 ? <View style={styles.divider} /> : null}<Pressable accessibilityRole="button" accessibilityLabel={`Open ${reminder.title}`} onPress={() => router.push({ pathname: '/reminder', params: { id: reminder.id } })} style={({ pressed }) => [styles.eventRow, pressed && styles.pressed]}>
+                <View style={[styles.eventIcon, { backgroundColor: visual.softColor }]}><Ionicons name={visual.icon} size={22} color={visual.color} /></View>
+                <View style={styles.eventCopy}><Text style={styles.eventTitle}>{reminder.title}</Text><Text style={styles.eventDetail}>{reminderRelativeLabel(reminder.dueOn, reminder.timeOfDay)}{linkedPerson ? ` · ${personDisplayName(linkedPerson)}` : ''}</Text></View>
+                {linkedPerson ? <Avatar initials={personInitials(linkedPerson)} imageUri={linkedPerson.photoUrl} color={AppColors.sky} size={38} /> : <Ionicons name="chevron-forward" size={19} color={AppColors.slate} />}
+              </Pressable></View>;
+            })}
           </View>
         </View>
 
@@ -422,6 +425,7 @@ const styles = StyleSheet.create({
     ...Shadow.card,
   },
   eventRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, minHeight: 76 },
+  emptyEvent: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, minHeight: 88 },
   eventIcon: { alignItems: 'center', justifyContent: 'center', width: 44, height: 44, borderRadius: Radius.md },
   eventCopy: { flex: 1 },
   eventTitle: { color: AppColors.ink, fontSize: 15, fontWeight: '700', marginBottom: 3 },

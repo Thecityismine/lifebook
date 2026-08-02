@@ -15,6 +15,9 @@ const protectedDetailRoutes = new Set([
   'edit-memory',
   'chapter',
   'edit-chapter',
+  'reminders',
+  'reminder',
+  'edit-reminder',
 ]);
 
 function AppNavigator() {
@@ -98,6 +101,9 @@ function AppNavigator() {
         <Stack.Screen name="edit-memory" />
         <Stack.Screen name="chapter" />
         <Stack.Screen name="edit-chapter" />
+        <Stack.Screen name="reminders" />
+        <Stack.Screen name="reminder" />
+        <Stack.Screen name="edit-reminder" />
       </Stack>
     </>
   );

@@ -1,7 +1,7 @@
 import { chromium } from 'playwright-core';
 
 const baseUrl = process.env.LIFEBOOK_E2E_BASE_URL || 'http://localhost:8081';
-const protectedRoutes = ['/chapters', '/chapter', '/edit-chapter'];
+const protectedRoutes = ['/chapters', '/chapter', '/edit-chapter', '/reminders', '/reminder', '/edit-reminder'];
 const launchOptions = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
   ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH }
   : { channel: 'msedge' };
@@ -27,7 +27,7 @@ try {
     throw new Error(`Browser reported ${browserErrors.length} error(s): ${browserErrors.join(' | ')}`);
   }
 
-  console.log(`Protected Chapter routes browser smoke test passed (${protectedRoutes.length} routes).`);
+  console.log(`Protected routes browser smoke test passed (${protectedRoutes.length} routes).`);
 } finally {
   await browser.close();
 }

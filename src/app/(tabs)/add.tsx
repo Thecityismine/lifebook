@@ -33,6 +33,8 @@ export default function AddScreen() {
                   router.push('/edit-person');
                 } else if (action.title === 'Chapter') {
                   router.push('/edit-chapter');
+                } else if (action.title === 'Reminder') {
+                  router.push('/edit-reminder');
                 }
               }}
               style={({ pressed }) => [styles.actionCard, pressed && styles.pressed]}>

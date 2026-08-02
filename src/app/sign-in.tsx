@@ -21,6 +21,9 @@ export default function SignInScreen() {
   async function handleSignIn() {
     setMessage(null);
     setSubmitting(true);
+    router.prefetch('/family');
+    router.prefetch('/child');
+    router.prefetch('/home');
     const result = await signInParent(email, password);
 
     if (!result.ok) {
@@ -65,6 +68,7 @@ export default function SignInScreen() {
           label="Sign in securely"
           disabled={!ready}
           loading={submitting}
+          loadingLabel="Opening LifeBook..."
           onPress={handleSignIn}
           icon="lock-closed"
         />

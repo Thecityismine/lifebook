@@ -27,7 +27,7 @@ export default function FamilyScreen() {
       return;
     }
 
-    router.push('/child');
+    router.replace('/child');
   }
 
   return (
@@ -38,7 +38,15 @@ export default function FamilyScreen() {
       onBack={() => router.back()}
       step={4}
       totalSteps={5}
-      footer={<PrimaryButton label="Continue" disabled={!ready} loading={submitting} onPress={handleContinue} />}>
+      footer={
+        <PrimaryButton
+          label="Continue"
+          disabled={!ready}
+          loading={submitting}
+          loadingLabel="Creating family space..."
+          onPress={handleContinue}
+        />
+      }>
       <View style={styles.familyCard}>
         <View style={styles.familyIcon}>
           <Ionicons name="home" size={30} color={AppColors.violet} />

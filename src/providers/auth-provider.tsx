@@ -4,6 +4,11 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 
 import { getFirebaseAuth } from '@/services/firebase';
 import { subscribeToParentSetup, type ParentSetup } from '@/services/family';
+import {
+  authSetupIdentity,
+  shouldRestartSetupSubscription,
+  type AuthSetupIdentity,
+} from '@/services/auth-flow-policy';
 
 type AuthContextValue = {
   user: User | null;
@@ -24,6 +29,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [setupLoading, setSetupLoading] = useState(false);
   const [setupError, setSetupError] = useState(false);
   const setupUnsubscribe = useRef<(() => void) | null>(null);
+  const setupIdentity = useRef<AuthSetupIdentity>(authSetupIdentity(null));
   const [, setRevision] = useState(0);
 
   useEffect(() => {
@@ -32,9 +38,19 @@ export function AuthProvider({ children }: PropsWithChildren) {
     }
 
     const unsubscribe = onIdTokenChanged(auth, (nextUser) => {
+      const nextSetupIdentity = authSetupIdentity(nextUser);
+      const shouldRestartSetup = shouldRestartSetupSubscription(setupIdentity.current, nextSetupIdentity);
+
+      setUser(nextUser);
+
+      if (!shouldRestartSetup) {
+        setInitializing(false);
+        return;
+      }
+
       setupUnsubscribe.current?.();
       setupUnsubscribe.current = null;
-      setUser(nextUser);
+      setupIdentity.current = nextSetupIdentity;
       setSetup(null);
       setSetupError(false);
 

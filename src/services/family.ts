@@ -1,5 +1,5 @@
 import { FirebaseError } from 'firebase/app';
-import { getIdToken } from 'firebase/auth';
+import { getIdToken, getIdTokenResult } from 'firebase/auth';
 import {
   collection,
   doc,
@@ -98,10 +98,13 @@ export async function createFamilySpace(name: string): Promise<FamilyActionResul
   const cleanName = name.trim();
 
   try {
-    // Email verification changes an ID-token claim. Refresh it before the
-    // first protected write so an already-open session cannot carry the old
-    // unverified claim into Firestore Security Rules.
-    await getIdToken(user, true);
+    // Email verification changes an ID-token claim. Reuse a current verified
+    // token, and force a refresh only when an open session still has the old
+    // claim. This avoids restarting auth-dependent work on every family save.
+    const tokenResult = await getIdTokenResult(user);
+    if (tokenResult.claims.email_verified !== true) {
+      await getIdToken(user, true);
+    }
     const familyId = await runTransaction(db, async (transaction) => {
       const userRef = doc(db, 'users', user.uid);
       const userSnapshot = await transaction.get(userRef);

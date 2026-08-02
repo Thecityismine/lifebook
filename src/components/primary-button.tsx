@@ -9,6 +9,7 @@ type PrimaryButtonProps = {
   disabled?: boolean;
   icon?: keyof typeof Ionicons.glyphMap;
   loading?: boolean;
+  loadingLabel?: string;
 };
 
 export function PrimaryButton({
@@ -17,6 +18,7 @@ export function PrimaryButton({
   disabled = false,
   icon = 'arrow-forward',
   loading = false,
+  loadingLabel,
 }: PrimaryButtonProps) {
   const unavailable = disabled || loading;
 
@@ -28,7 +30,10 @@ export function PrimaryButton({
       onPress={onPress}
       style={({ pressed }) => [styles.button, unavailable && styles.disabled, pressed && !unavailable && styles.pressed]}>
       {loading ? (
-        <ActivityIndicator color={AppColors.onAccent} />
+        <>
+          <ActivityIndicator color={AppColors.onAccent} />
+          {loadingLabel ? <Text style={styles.label}>{loadingLabel}</Text> : null}
+        </>
       ) : (
         <>
           <Text style={styles.label}>{label}</Text>

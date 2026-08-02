@@ -53,6 +53,7 @@
     "test:e2e:protected-routes": "node scripts/protected-routes-browser-smoke.mjs",
     "test:e2e:privacy-public": "node scripts/privacy-public-browser-smoke.mjs",
     "test:functions": "npm --prefix functions test",
+    "test:auth-flow": "node --experimental-strip-types --test tests/auth-flow-policy.test.mjs",
     "test:notifications": "node --experimental-strip-types --test tests/reminder-notification-policy.test.mjs",
     "test:rules:people": "firebase emulators:exec --only firestore,storage \"node --test tests/firestore.people.rules.test.mjs\"",
     "test:rules": "firebase emulators:exec --only firestore,storage \"node --test tests/firestore.people.rules.test.mjs\"",

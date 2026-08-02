@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { OnboardingShell } from '@/components/onboarding-shell';
@@ -9,10 +9,15 @@ import { AppColors, Radius, Spacing } from '@/constants/theme';
 import { useAuthSession } from '@/providers/auth-provider';
 import { acceptFamilyInvite, previewFamilyInvite, type InvitePreview } from '@/services/collaboration';
 
+const subscribeToHydration = () => () => undefined;
+const browserSnapshot = () => true;
+const serverSnapshot = () => false;
+
 export default function JoinFamilyScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ token?: string }>();
   const { user, setup } = useAuthSession();
+  const hydrated = useSyncExternalStore(subscribeToHydration, browserSnapshot, serverSnapshot);
   const token = typeof params.token === 'string' ? params.token : '';
   const [preview, setPreview] = useState<InvitePreview | null>(null);
   const [confirmed, setConfirmed] = useState(false);
@@ -43,6 +48,10 @@ export default function JoinFamilyScreen() {
     setAccepting(false);
     if (!result.ok) { setError(result.message); return; }
     setAcceptedFamilyId(result.familyId);
+  }
+
+  if (!hydrated) {
+    return <OnboardingShell eyebrow="Private family invitation" title="Opening your secure invitation" subtitle="LifeBook is preparing the verified invitation checkpoint."><View style={styles.stateCard}><ActivityIndicator color={AppColors.violet} /><Text style={styles.detail}>Loading invitation…</Text></View></OnboardingShell>;
   }
 
   if (!token) {

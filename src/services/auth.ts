@@ -1,6 +1,9 @@
 import { FirebaseError } from 'firebase/app';
 import {
   createUserWithEmailAndPassword,
+  EmailAuthProvider,
+  getIdToken,
+  reauthenticateWithCredential,
   reload,
   sendEmailVerification,
   signOut,
@@ -148,6 +151,23 @@ export async function signOutParent(): Promise<AuthActionResult> {
   try {
     await signOut(auth);
     return { ok: true };
+  } catch (error) {
+    return { ok: false, code: 'request-failed', message: messageForFirebaseError(error, 'sign-in') };
+  }
+}
+
+export async function reauthenticateParent(password: string): Promise<AuthActionResult> {
+  const auth = getFirebaseAuth();
+  const user = auth?.currentUser;
+  if (!auth || !user?.email) {
+    return unavailableResult();
+  }
+
+  try {
+    const credential = EmailAuthProvider.credential(user.email, password);
+    await reauthenticateWithCredential(user, credential);
+    await getIdToken(user, true);
+    return { ok: true, emailVerified: user.emailVerified };
   } catch (error) {
     return { ok: false, code: 'request-failed', message: messageForFirebaseError(error, 'sign-in') };
   }

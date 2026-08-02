@@ -32,3 +32,4 @@ The data models are documented in:
 - [`docs/phase3-memories-model.md`](docs/phase3-memories-model.md)
 - [`docs/phase4-chapters-model.md`](docs/phase4-chapters-model.md)
 - [`docs/phase5-reminders-model.md`](docs/phase5-reminders-model.md)
+- [`docs/phase6-privacy-account-lifecycle.md`](docs/phase6-privacy-account-lifecycle.md)

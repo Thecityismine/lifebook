@@ -30,6 +30,11 @@ export default function WelcomeScreen() {
             <Text style={styles.signInCopy}>Already have an account?</Text>
             <Text style={styles.signInAction}>Sign in</Text>
           </Pressable>
+          <View style={styles.publicLinks}>
+            <Pressable accessibilityRole="link" onPress={() => router.push('/privacy-policy')} hitSlop={8}><Text style={styles.publicLink}>Privacy</Text></Pressable>
+            <View style={styles.linkDot} />
+            <Pressable accessibilityRole="link" onPress={() => router.push('/delete-account')} hitSlop={8}><Text style={styles.publicLink}>Delete account</Text></Pressable>
+          </View>
         </View>
       }>
       <View style={styles.hero}>
@@ -121,4 +126,7 @@ const styles = StyleSheet.create({
   signInCopy: { color: AppColors.inkMuted, fontSize: 14 },
   signInAction: { color: AppColors.violet, fontSize: 14, fontWeight: '800' },
   pressed: { opacity: 0.6 },
+  publicLinks: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm },
+  publicLink: { color: AppColors.inkMuted, fontSize: 12, fontWeight: '700' },
+  linkDot: { width: 3, height: 3, borderRadius: 2, backgroundColor: AppColors.line },
 });

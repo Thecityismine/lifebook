@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getApp, getApps, initializeApp, type FirebaseApp } from 'firebase/app';
 import * as FirebaseAuth from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
+import { getFunctions, type Functions } from 'firebase/functions';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
 import { Platform } from 'react-native';
 
@@ -11,6 +12,7 @@ let cachedApp: FirebaseApp | null = null;
 let cachedAuth: FirebaseAuth.Auth | null = null;
 let cachedFirestore: Firestore | null = null;
 let cachedStorage: FirebaseStorage | null = null;
+let cachedFunctions: Functions | null = null;
 
 type ReactNativePersistenceFactory = (storage: typeof AsyncStorage) => FirebaseAuth.Persistence;
 
@@ -84,4 +86,16 @@ export function getFirebaseAuth(): FirebaseAuth.Auth | null {
   }
 
   return cachedAuth;
+}
+
+export function getFirebaseFunctions(): Functions | null {
+  if (cachedFunctions) {
+    return cachedFunctions;
+  }
+  const app = getFirebaseApp();
+  if (!app) {
+    return null;
+  }
+  cachedFunctions = getFunctions(app, 'us-central1');
+  return cachedFunctions;
 }

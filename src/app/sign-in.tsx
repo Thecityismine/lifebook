@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -10,6 +10,8 @@ import { signInParent } from '@/services/auth';
 
 export default function SignInScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ returnTo?: string }>();
+  const returnTo = params.returnTo === '/delete-account' ? '/delete-account' : '';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState<string | null>(null);
@@ -28,6 +30,10 @@ export default function SignInScreen() {
     }
 
     if (result.emailVerified) {
+      if (returnTo) {
+        router.replace(returnTo);
+        return;
+      }
       // The root guard resolves this checkpoint to family setup, child setup,
       // or Home after the persisted parent setup snapshot arrives.
       router.replace('/child');

@@ -138,6 +138,13 @@ export default function HomeScreen() {
             <Avatar initials={accountInitials || 'P'} size={50} color={AppColors.violet} badge />
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel="Open privacy and data settings"
+              onPress={() => router.push('/privacy')}
+              style={({ pressed }) => [styles.signOutButton, pressed && styles.pressed]}>
+              <Ionicons name="settings-outline" size={21} color={AppColors.violet} />
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
               accessibilityLabel="Sign out"
               onPress={() => {
                 void signOutParent();

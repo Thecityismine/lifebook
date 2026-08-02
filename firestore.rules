@@ -18,6 +18,10 @@ service cloud.firestore {
       return /databases/$(database)/documents/families/$(familyId)/members/$(request.auth.uid);
     }
 
+    function privacySettingsPath(familyId) {
+      return /databases/$(database)/documents/families/$(familyId)/settings/privacy;
+    }
+
     function isFamilyMember(familyId) {
       return verifiedParent() && exists(memberPath(familyId));
     }
@@ -25,7 +29,9 @@ service cloud.firestore {
     function isFamilyManager(familyId) {
       return isFamilyMember(familyId)
         && (get(memberPath(familyId)).data.role == 'owner'
-          || get(memberPath(familyId)).data.role == 'guardian');
+          || (get(memberPath(familyId)).data.role == 'guardian'
+            && (!exists(privacySettingsPath(familyId))
+              || get(privacySettingsPath(familyId)).data.guardianCanEdit == true)));
     }
 
     function isFamilyOwner(familyId) {
@@ -322,6 +328,41 @@ service cloud.firestore {
         && data.updatedAt is timestamp;
     }
 
+    function validPrivacySettings(data, familyId) {
+      return data.keys().hasAll([
+          'familyId', 'defaultVisibility', 'guardianCanEdit', 'updatedBy',
+          'schemaVersion', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'familyId', 'defaultVisibility', 'guardianCanEdit', 'updatedBy',
+          'schemaVersion', 'createdAt', 'updatedAt'
+        ])
+        && data.familyId == familyId
+        && data.defaultVisibility == 'family'
+        && data.guardianCanEdit is bool
+        && data.updatedBy is string
+        && data.schemaVersion == 1
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function validAuditEvent(data, familyId) {
+      return data.keys().hasAll([
+          'familyId', 'eventType', 'actorId', 'summary', 'schemaVersion', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'familyId', 'eventType', 'actorId', 'summary', 'schemaVersion', 'createdAt'
+        ])
+        && data.familyId == familyId
+        && data.eventType in ['privacy_settings_updated', 'member_role_changed', 'ownership_transferred']
+        && data.actorId == request.auth.uid
+        && data.summary is string
+        && data.summary.size() >= 1
+        && data.summary.size() <= 240
+        && data.schemaVersion == 1
+        && data.createdAt == request.time;
+    }
+
     match /users/{userId} {
       allow read: if isSelf(userId);
 
@@ -557,6 +598,33 @@ service cloud.firestore {
             'completedAt', 'archivedAt', 'updatedAt'
           ]);
         allow delete: if false;
+      }
+
+      match /settings/{settingId} {
+        allow read: if isFamilyMember(familyId);
+        allow create: if settingId == 'privacy'
+          && isFamilyOwner(familyId)
+          && validPrivacySettings(request.resource.data, familyId)
+          && request.resource.data.updatedBy == request.auth.uid
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time;
+        allow update: if settingId == 'privacy'
+          && isFamilyOwner(familyId)
+          && validPrivacySettings(request.resource.data, familyId)
+          && request.resource.data.familyId == resource.data.familyId
+          && request.resource.data.schemaVersion == resource.data.schemaVersion
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.updatedBy == request.auth.uid
+          && request.resource.data.updatedAt == request.time
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['guardianCanEdit', 'updatedBy', 'updatedAt']);
+        allow delete: if false;
+      }
+
+      match /auditEvents/{eventId} {
+        allow read: if isFamilyMember(familyId);
+        allow create: if isFamilyOwner(familyId) && validAuditEvent(request.resource.data, familyId);
+        allow update, delete: if false;
       }
     }
 

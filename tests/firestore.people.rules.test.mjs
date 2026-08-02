@@ -6,6 +6,7 @@ import { deleteDoc, doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'fire
 const projectId = 'lifebook-31782';
 const ownerId = 'owner-a';
 const outsiderId = 'owner-b';
+const guardianId = 'guardian-a';
 const familyId = 'family-a';
 const outsiderFamilyId = 'family-b';
 const profileId = 'profile-a';
@@ -90,6 +91,18 @@ function reminderData() {
   };
 }
 
+function privacySettingsData(guardianCanEdit = false) {
+  return {
+    familyId,
+    defaultVisibility: 'family',
+    guardianCanEdit,
+    updatedBy: ownerId,
+    schemaVersion: 1,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  };
+}
+
 before(async () => {
   testEnvironment = await initializeTestEnvironment({
     projectId,
@@ -108,6 +121,9 @@ beforeEach(async () => {
       }),
       setDoc(doc(db, 'families', familyId, 'members', ownerId), {
         userId: ownerId, role: 'owner', displayName: 'Owner A', email: 'owner-a@example.com', joinedAt: new Date(),
+      }),
+      setDoc(doc(db, 'families', familyId, 'members', guardianId), {
+        userId: guardianId, role: 'guardian', displayName: 'Guardian A', email: 'guardian-a@example.com', joinedAt: new Date(),
       }),
       setDoc(doc(db, 'families', familyId, 'profiles', profileId), {
         familyId, firstName: 'Sam', relationship: 'My child', managed: true,
@@ -326,4 +342,60 @@ test('reminder records deny invalid-profile and cross-family access', async () =
   await assertFails(setDoc(doc(outsiderDb, 'families', familyId, 'reminders', 'intruder-reminder'), {
     ...reminderData(), createdBy: outsiderId,
   }));
+});
+
+test('owner can manage family privacy settings and create immutable audit events', async () => {
+  const ownerDb = testEnvironment.authenticatedContext(ownerId, {
+    email: 'owner-a@example.com', email_verified: true,
+  }).firestore();
+  const settingsRef = doc(ownerDb, 'families', familyId, 'settings', 'privacy');
+  const auditRef = doc(ownerDb, 'families', familyId, 'auditEvents', 'privacy-event-a');
+
+  await assertSucceeds(setDoc(settingsRef, privacySettingsData(false)));
+  await assertSucceeds(getDoc(settingsRef));
+  await assertSucceeds(updateDoc(settingsRef, {
+    guardianCanEdit: true, updatedBy: ownerId, updatedAt: serverTimestamp(),
+  }));
+  await assertSucceeds(setDoc(auditRef, {
+    familyId,
+    eventType: 'privacy_settings_updated',
+    actorId: ownerId,
+    summary: 'Guardian editing enabled.',
+    schemaVersion: 1,
+    createdAt: serverTimestamp(),
+  }));
+  await assertFails(updateDoc(auditRef, { summary: 'Changed later.' }));
+  await assertFails(deleteDoc(settingsRef));
+  await assertFails(deleteDoc(auditRef));
+});
+
+test('privacy settings enforce guardian editing and deny cross-family control', async () => {
+  const ownerDb = testEnvironment.authenticatedContext(ownerId, {
+    email: 'owner-a@example.com', email_verified: true,
+  }).firestore();
+  const settingsRef = doc(ownerDb, 'families', familyId, 'settings', 'privacy');
+  await assertSucceeds(setDoc(settingsRef, privacySettingsData(false)));
+
+  const guardianDb = testEnvironment.authenticatedContext(guardianId, {
+    email: 'guardian-a@example.com', email_verified: true,
+  }).firestore();
+  await assertSucceeds(getDoc(doc(guardianDb, 'families', familyId, 'settings', 'privacy')));
+  await assertFails(setDoc(doc(guardianDb, 'families', familyId, 'people', 'guardian-person-a'), {
+    ...personData(), createdBy: guardianId,
+  }));
+  await assertFails(updateDoc(doc(guardianDb, 'families', familyId, 'settings', 'privacy'), {
+    guardianCanEdit: true, updatedBy: guardianId, updatedAt: serverTimestamp(),
+  }));
+
+  await assertSucceeds(updateDoc(settingsRef, {
+    guardianCanEdit: true, updatedBy: ownerId, updatedAt: serverTimestamp(),
+  }));
+  await assertSucceeds(setDoc(doc(guardianDb, 'families', familyId, 'people', 'guardian-person-b'), {
+    ...personData(), createdBy: guardianId,
+  }));
+
+  const outsiderDb = testEnvironment.authenticatedContext(outsiderId, {
+    email: 'owner-b@example.com', email_verified: true,
+  }).firestore();
+  await assertFails(getDoc(doc(outsiderDb, 'families', familyId, 'settings', 'privacy')));
 });

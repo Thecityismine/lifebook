@@ -102,7 +102,7 @@ export default function PeopleScreen() {
         <ScreenTitle
           title="People"
           subtitle={`${activeCount} ${activeCount === 1 ? 'person' : 'people'} in your private family directory`}
-          actionIcon="ellipsis-horizontal"
+          actionIcon="person-add"
           actionLabel="Add a person"
           onAction={() => router.push('/edit-person')}
         />

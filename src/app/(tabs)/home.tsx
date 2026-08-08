@@ -48,20 +48,13 @@ function QuickCard({
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { user, setup } = useAuthSession();
+  const { setup } = useAuthSession();
   const [summary, setSummary] = useState<FamilySummary | null>(null);
   const [people, setPeople] = useState<PersonRecord[]>([]);
   const [memories, setMemories] = useState<MemoryRecord[]>([]);
   const [chapters, setChapters] = useState<ChapterRecord[]>([]);
   const [reminders, setReminders] = useState<ReminderRecord[]>([]);
   const profileName = summary?.profileName || 'Your family';
-  const accountInitials = (user?.displayName || user?.email || 'Parent')
-    .split(/[\s@]+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join('');
-
   useEffect(() => {
     let active = true;
     if (!setup) {
@@ -130,17 +123,14 @@ export default function HomeScreen() {
         contentInsetAdjustmentBehavior="automatic">
         <View style={styles.header}>
           <View style={styles.headerCopy}>
-            <Text style={styles.brand}>{summary?.familyName || 'LifeBook'}</Text>
-            <Text style={styles.greeting}>Good morning</Text>
             <Text style={styles.profileName}>{profileName}’s story</Text>
           </View>
           <View style={styles.headerActions}>
-            <Avatar initials={accountInitials || 'P'} size={50} color={AppColors.violet} badge />
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Open privacy and data settings"
               onPress={() => router.push('/privacy')}
-              style={({ pressed }) => [styles.signOutButton, pressed && styles.pressed]}>
+              style={({ pressed }) => [styles.headerActionButton, pressed && styles.pressed]}>
               <Ionicons name="settings-outline" size={21} color={AppColors.violet} />
             </Pressable>
             <Pressable
@@ -149,7 +139,7 @@ export default function HomeScreen() {
               onPress={() => {
                 void signOutParent();
               }}
-              style={({ pressed }) => [styles.signOutButton, pressed && styles.pressed]}>
+              style={({ pressed }) => [styles.headerActionButton, pressed && styles.pressed]}>
               <Ionicons name="log-out-outline" size={21} color={AppColors.inkMuted} />
             </Pressable>
           </View>
@@ -299,9 +289,9 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
     gap: Spacing.xxl,
   },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 52 },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  signOutButton: {
+  headerActionButton: {
     width: 44,
     height: 44,
     borderRadius: Radius.full,
@@ -311,16 +301,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: AppColors.border,
   },
-  headerCopy: { flex: 1 },
-  brand: {
-    color: AppColors.violet,
-    fontFamily: FontFamily?.bold,
-    fontSize: 14,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-    marginBottom: 6,
-  },
-  greeting: { color: AppColors.inkMuted, fontFamily: FontFamily?.regular, fontSize: 14 },
+  headerCopy: { flex: 1, paddingRight: Spacing.sm },
   profileName: {
     color: AppColors.ink,
     fontFamily: FontFamily?.bold,

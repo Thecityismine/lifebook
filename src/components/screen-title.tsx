@@ -7,7 +7,7 @@ type ScreenTitleProps = {
   eyebrow?: string;
   title: string;
   subtitle?: string;
-  actionIcon?: 'search-outline' | 'settings-outline' | 'ellipsis-horizontal';
+  actionIcon?: 'search-outline' | 'settings-outline' | 'ellipsis-horizontal' | 'person-add';
   actionLabel?: string;
   onAction?: () => void;
 };

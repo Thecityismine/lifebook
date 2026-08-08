@@ -3,6 +3,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import '@/global.css';
+
 import { AppColors } from '@/constants/theme';
 import { AuthProvider, useAuthSession } from '@/providers/auth-provider';
 import { ReminderNotificationProvider } from '@/providers/reminder-notification-provider';

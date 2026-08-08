@@ -53,7 +53,8 @@
           "color": "#6C5CE7",
           "defaultChannel": "lifebook-reminders"
         }
-      ]
+      ],
+      "expo-image"
     ],
     "experiments": {
       "typedRoutes": true,

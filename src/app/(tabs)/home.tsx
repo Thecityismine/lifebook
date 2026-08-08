@@ -238,7 +238,13 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.section}>
-          <SectionHeader title={latestMemory ? 'A memory to keep' : 'Start the timeline'} action={latestMemory ? 'Open' : 'Add'} />
+          <SectionHeader
+            title={latestMemory ? 'A memory to keep' : 'Start the timeline'}
+            action={latestMemory ? 'Open' : 'Add'}
+            onPress={() => latestMemory
+              ? router.push({ pathname: '/memory', params: { id: latestMemory.id } })
+              : router.push('/edit-memory')}
+          />
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={latestMemory ? `Open ${latestMemory.title}` : 'Add the first memory'}

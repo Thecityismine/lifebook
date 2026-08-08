@@ -1,13 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/avatar';
 import { reminderKind } from '@/constants/reminders';
 import { AppColors, FontFamily, MaxContentWidth, Radius, Shadow, Spacing } from '@/constants/theme';
 import { useAuthSession } from '@/providers/auth-provider';
+import { confirmDestructiveAction } from '@/services/confirmation';
 import { personDisplayName, personInitials, subscribeToPerson, type PersonRecord } from '@/services/people';
 import { reminderDateLabel, setReminderArchived, setReminderCompleted, subscribeToReminder, type ReminderRecord } from '@/services/reminders';
 
@@ -49,7 +50,7 @@ export default function ReminderScreen() {
   const confirmArchive = () => {
     if (!reminder) return;
     if (reminder.archivedAt) { void changeArchived(false); return; }
-    Alert.alert('Archive this reminder?', 'It will leave Coming up but can be restored from the Archived filter.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Archive', style: 'destructive', onPress: () => void changeArchived(true) }]);
+    confirmDestructiveAction({ title: 'Archive this reminder?', message: 'It will leave Coming up but can be restored from the Archived filter.', onConfirm: () => void changeArchived(true) });
   };
 
   if (loading) return <SafeAreaView style={styles.safeArea}><View style={styles.centerState}><ActivityIndicator color={AppColors.violet} /><Text style={styles.helper}>Opening this private reminder…</Text></View></SafeAreaView>;

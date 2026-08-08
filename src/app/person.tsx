@@ -1,13 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/avatar';
 import { AppColors, FontFamily, MaxContentWidth, Radius, Shadow, Spacing } from '@/constants/theme';
 import { useAuthSession } from '@/providers/auth-provider';
 import { memoryDateLabel, subscribeToMemories, type MemoryRecord } from '@/services/memories';
+import { confirmDestructiveAction } from '@/services/confirmation';
 import {
   personDisplayName,
   personInitials,
@@ -107,14 +108,11 @@ export default function PersonScreen() {
       void updateArchive(false);
       return;
     }
-    Alert.alert(
-      'Archive this person?',
-      'Their details and future memories stay safe. You can restore them from the Archived filter.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Archive', style: 'destructive', onPress: () => void updateArchive(true) },
-      ],
-    );
+    confirmDestructiveAction({
+      title: 'Archive this person?',
+      message: 'Their details and future memories stay safe. You can restore them from the Archived filter.',
+      onConfirm: () => void updateArchive(true),
+    });
   };
 
   if (loading) {

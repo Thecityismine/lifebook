@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/avatar';
@@ -15,6 +15,7 @@ import {
   type ChapterRecord,
 } from '@/services/chapters';
 import { memoryDateLabel, subscribeToMemories, type MemoryRecord } from '@/services/memories';
+import { confirmDestructiveAction } from '@/services/confirmation';
 import { personDisplayName, personInitials, subscribeToPeople, type PersonRecord } from '@/services/people';
 
 export default function ChapterScreen() {
@@ -93,14 +94,11 @@ export default function ChapterScreen() {
       void updateArchive(false);
       return;
     }
-    Alert.alert(
-      'Archive this chapter?',
-      'Its memories stay safe and remain in the main timeline. You can restore this chapter later.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Archive', style: 'destructive', onPress: () => void updateArchive(true) },
-      ],
-    );
+    confirmDestructiveAction({
+      title: 'Archive this chapter?',
+      message: 'Its memories stay safe and remain in the main timeline. You can restore this chapter later.',
+      onConfirm: () => void updateArchive(true),
+    });
   };
 
   if (loading) {

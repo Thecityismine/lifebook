@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/avatar';
@@ -9,6 +9,7 @@ import { AppColors, FontFamily, MaxContentWidth, Radius, Shadow, Spacing } from 
 import { useAuthSession } from '@/providers/auth-provider';
 import { chapterColor, chapterIcon } from '@/constants/chapters';
 import { subscribeToChapters, type ChapterRecord } from '@/services/chapters';
+import { confirmDestructiveAction } from '@/services/confirmation';
 import { memoryDateLabel, setMemoryArchived, subscribeToMemory, type MemoryRecord } from '@/services/memories';
 import { personDisplayName, personInitials, subscribeToPeople, type PersonRecord } from '@/services/people';
 
@@ -84,14 +85,11 @@ export default function MemoryScreen() {
       void updateArchive(false);
       return;
     }
-    Alert.alert(
-      'Archive this memory?',
-      'The story and its photo stay safe. You can restore it from the Archived filter.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Archive', style: 'destructive', onPress: () => void updateArchive(true) },
-      ],
-    );
+    confirmDestructiveAction({
+      title: 'Archive this memory?',
+      message: 'The story and its photo stay safe. You can restore it from the Archived filter.',
+      onConfirm: () => void updateArchive(true),
+    });
   };
 
   if (loading) {

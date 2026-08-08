@@ -2,6 +2,7 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
+    // Resolve family access through the default Firestore membership records.
     function verifiedParent() {
       return request.auth != null && request.auth.token.email_verified == true;
     }

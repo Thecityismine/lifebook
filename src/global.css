@@ -35,23 +35,3 @@ body {
   display: flex;
   flex-direction: column;
 }
-
-/*
- * In a standalone (home screen) PWA, `viewport-fit=cover` plus a translucent
- * status bar move the document up under the status bar, but iOS keeps resolving
- * the root height against the viewport as it was before the move. The app ends
- * up short at the bottom by exactly the top inset -- a strip of page background
- * below the tab bar, roughly the height of the tab bar itself on a Dynamic
- * Island phone. `bottom: 0` above does not help, because it is measured against
- * that same short viewport.
- *
- * Adding the top inset back to the height reaches the bottom of the screen. In
- * landscape iOS reports a top inset of 0, and outside a standalone PWA the rule
- * does not apply at all, so neither case is over-extended.
- */
-@media all and (display-mode: standalone) {
-  #root {
-    bottom: auto;
-    height: calc(100% + env(safe-area-inset-top));
-  }
-}

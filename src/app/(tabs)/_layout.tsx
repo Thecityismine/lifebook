@@ -4,8 +4,15 @@ import { StatusBar } from 'expo-status-bar';
 import type { ComponentProps } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import type { ColorValue } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppColors, Radius, Shadow } from '@/constants/theme';
+
+// Height of the bar above the bottom inset: room for the icon, the label, and the
+// 8px of padding above them.
+const tabBarContentHeight = Platform.select({ ios: 66, android: 62, default: 66 });
+// What the bar reserves at the bottom on a device with no home indicator.
+const minimumBottomInset = Platform.select({ ios: 22, android: 10, default: 10 });
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -28,6 +35,13 @@ function AddIcon({ focused }: { focused: boolean }) {
 }
 
 export default function RootLayout() {
+  const insets = useSafeAreaInsets();
+  // The navigator already pads the bar by insets.bottom, but an explicit height or
+  // paddingBottom in tabBarStyle is spread over that and wins, so the bar has to
+  // fold the inset in itself. Without this the bar keeps its home-button size on a
+  // home-indicator device and stops short of the bottom of the screen.
+  const bottomInset = Math.max(insets.bottom, minimumBottomInset);
+
   return (
     <>
       <StatusBar style="dark" />
@@ -39,7 +53,13 @@ export default function RootLayout() {
           tabBarInactiveTintColor: AppColors.slate,
           tabBarHideOnKeyboard: true,
           tabBarLabelStyle: styles.tabLabel,
-          tabBarStyle: styles.tabBar,
+          tabBarStyle: [
+            styles.tabBar,
+            {
+              height: tabBarContentHeight + bottomInset,
+              paddingBottom: bottomInset,
+            },
+          ],
         }}>
         <Tabs.Screen
           name="home"
@@ -100,9 +120,7 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.cloud,
   },
   tabBar: {
-    height: Platform.select({ ios: 88, android: 72, default: 76 }),
     paddingTop: 8,
-    paddingBottom: Platform.select({ ios: 22, android: 10, default: 10 }),
     backgroundColor: AppColors.paper,
     borderTopColor: AppColors.border,
     ...Shadow.navigation,

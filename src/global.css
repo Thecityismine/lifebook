@@ -8,14 +8,50 @@ body,
 #root {
   width: 100%;
   min-width: 100%;
-  min-height: 100%;
   margin: 0;
   background-color: #0c1120;
 }
 
+html,
 body {
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: 100%;
+  /* Follows the visible viewport instead of the launch-time one. */
+  height: 100dvh;
+}
+
+body {
   padding: 0;
   overflow-x: hidden;
+}
+
+/*
+ * Pin the root to the layout viewport rather than inheriting the percentage
+ * height chain expo-reset installs, so the app is re-measured on every viewport
+ * change instead of once at launch.
+ */
+#root {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/*
+ * In a standalone (home screen) PWA, `viewport-fit=cover` plus a translucent
+ * status bar move the document up under the status bar, but iOS keeps resolving
+ * the root height against the viewport as it was before the move. The app ends
+ * up short at the bottom by exactly the top inset -- a strip of page background
+ * below the tab bar, roughly the height of the tab bar itself on a Dynamic
+ * Island phone. `bottom: 0` above does not help, because it is measured against
+ * that same short viewport.
+ *
+ * Adding the top inset back to the height reaches the bottom of the screen. In
+ * landscape iOS reports a top inset of 0, and outside a standalone PWA the rule
+ * does not apply at all, so neither case is over-extended.
+ */
+@media all and (display-mode: standalone) {
+  #root {
+    bottom: auto;
+    height: calc(100% + env(safe-area-inset-top));
+  }
 }

@@ -25,13 +25,18 @@ body {
 }
 
 /*
- * Pin the root to the layout viewport rather than inheriting the percentage
- * height chain expo-reset installs, so the app is re-measured on every viewport
- * change instead of once at launch.
+ * Pin the root to the viewport rather than inheriting the percentage height
+ * chain expo-reset installs. `--app-height` is kept in sync by app-viewport.web
+ * because iOS can report a viewport short by the safe-area insets on the first
+ * paint after a launch or resume; the 100% fallback applies before that runs and
+ * on anything that is not a standalone PWA.
  */
 #root {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--app-height, 100%);
   display: flex;
   flex-direction: column;
 }

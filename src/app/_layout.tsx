@@ -7,6 +7,7 @@ import '@/global.css';
 
 import { AppColors } from '@/constants/theme';
 import { AuthProvider, useAuthSession } from '@/providers/auth-provider';
+import { syncAppHeight } from '@/services/app-viewport';
 import { ReminderNotificationProvider } from '@/providers/reminder-notification-provider';
 import { requiredSetupRoute } from '@/services/auth-flow-policy';
 
@@ -215,6 +216,8 @@ const styles = StyleSheet.create({
 });
 
 export default function RootLayout() {
+  useEffect(() => syncAppHeight(), []);
+
   return (
     <AuthProvider>
       <ReminderNotificationProvider>

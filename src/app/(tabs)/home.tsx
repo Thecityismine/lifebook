@@ -10,11 +10,31 @@ import { reminderKind } from '@/constants/reminders';
 import { AppColors, FontFamily, MaxContentWidth, Radius, Shadow, Spacing } from '@/constants/theme';
 import { useAuthSession } from '@/providers/auth-provider';
 import { signOutParent } from '@/services/auth';
+import {
+  birthdayDetailLabel,
+  birthdayTitle,
+  remainingBirthdaysThisMonth,
+  type BirthdayEntry,
+} from '@/services/birthdays';
 import { subscribeToChapters, type ChapterRecord } from '@/services/chapters';
 import { getFamilySummary, type FamilySummary } from '@/services/family';
 import { memoryDateLabel, subscribeToMemories, type MemoryRecord } from '@/services/memories';
 import { personDisplayName, personInitials, subscribeToPeople, type PersonRecord } from '@/services/people';
 import { reminderRelativeLabel, subscribeToReminders, type ReminderRecord } from '@/services/reminders';
+
+const MAX_COMING_UP = 3;
+
+type ComingUpItem =
+  | { key: string; sortKey: string; kind: 'birthday'; entry: BirthdayEntry<PersonRecord> }
+  | { key: string; sortKey: string; kind: 'reminder'; reminder: ReminderRecord };
+
+function dateKey(value: Date) {
+  return [
+    value.getFullYear(),
+    String(value.getMonth() + 1).padStart(2, '0'),
+    String(value.getDate()).padStart(2, '0'),
+  ].join('-');
+}
 
 function QuickCard({
   icon,
@@ -101,9 +121,27 @@ export default function HomeScreen() {
   const activeMemories = useMemo(() => memories.filter((memory) => !memory.archivedAt), [memories]);
   const activeChapters = useMemo(() => chapters.filter((chapter) => !chapter.archivedAt), [chapters]);
   const upcomingReminders = useMemo(
-    () => reminders.filter((reminder) => !reminder.archivedAt && !reminder.completedAt).slice(0, 2),
+    () => reminders.filter((reminder) => !reminder.archivedAt && !reminder.completedAt),
     [reminders],
   );
+  // Birthdays are derived from the directory, so they show up here without anyone
+  // having to create a reminder for them.
+  const monthBirthdays = useMemo(() => remainingBirthdaysThisMonth(activePeople), [activePeople]);
+  const comingUp = useMemo<ComingUpItem[]>(() => [
+    ...monthBirthdays.map((entry) => ({
+      key: `birthday-${entry.person.id}`,
+      sortKey: dateKey(entry.observedOn),
+      kind: 'birthday' as const,
+      entry,
+    })),
+    ...upcomingReminders.map((reminder) => ({
+      key: `reminder-${reminder.id}`,
+      sortKey: reminder.dueOn,
+      kind: 'reminder' as const,
+      reminder,
+    })),
+  ].sort((left, right) => left.sortKey.localeCompare(right.sortKey)).slice(0, MAX_COMING_UP),
+  [monthBirthdays, upcomingReminders]);
   const latestMemory = activeMemories[0] || null;
   const latestPeople = useMemo(() => {
     if (!latestMemory) {
@@ -209,21 +247,45 @@ export default function HomeScreen() {
         <View style={styles.section}>
           <SectionHeader title="Coming up" action={upcomingReminders.length ? 'See all' : 'Add'} onPress={() => router.push(upcomingReminders.length ? '/reminders' : '/edit-reminder')} />
           <View style={styles.listCard}>
-            {upcomingReminders.length === 0 ? (
+            {comingUp.length === 0 ? (
               <Pressable onPress={() => router.push('/edit-reminder')} style={({ pressed }) => [styles.emptyEvent, pressed && styles.pressed]}>
                 <View style={[styles.eventIcon, { backgroundColor: AppColors.sunSoft }]}><Ionicons name="notifications-outline" size={22} color={AppColors.sun} /></View>
                 <View style={styles.eventCopy}><Text style={styles.eventTitle}>Nothing to remember yet</Text><Text style={styles.eventDetail}>Add a birthday, appointment, or important moment.</Text></View>
                 <Ionicons name="add-circle" size={23} color={AppColors.violet} />
               </Pressable>
-            ) : upcomingReminders.map((reminder, index) => {
+            ) : comingUp.map((item, index) => {
+              if (item.kind === 'birthday') {
+                const { person } = item.entry;
+                return <View key={item.key}>{index > 0 ? <View style={styles.divider} /> : null}<Pressable accessibilityRole="button" accessibilityLabel={`Open ${personDisplayName(person)}`} onPress={() => router.push({ pathname: '/person', params: { id: person.id } })} style={({ pressed }) => [styles.eventRow, pressed && styles.pressed]}>
+                  <View style={[styles.eventIcon, { backgroundColor: AppColors.sunSoft }]}><Ionicons name="gift-outline" size={22} color={AppColors.sun} /></View>
+                  <View style={styles.eventCopy}><Text style={styles.eventTitle}>{birthdayTitle(item.entry)}</Text><Text style={styles.eventDetail}>{birthdayDetailLabel(item.entry)}</Text></View>
+                  <Avatar initials={personInitials(person)} imageUri={person.photoUrl} color={AppColors.sky} size={38} />
+                </Pressable></View>;
+              }
+
+              const { reminder } = item;
               const visual = reminderKind(reminder.kind);
               const linkedPerson = people.find((person) => person.id === reminder.personId);
-              return <View key={reminder.id}>{index > 0 ? <View style={styles.divider} /> : null}<Pressable accessibilityRole="button" accessibilityLabel={`Open ${reminder.title}`} onPress={() => router.push({ pathname: '/reminder', params: { id: reminder.id } })} style={({ pressed }) => [styles.eventRow, pressed && styles.pressed]}>
+              return <View key={item.key}>{index > 0 ? <View style={styles.divider} /> : null}<Pressable accessibilityRole="button" accessibilityLabel={`Open ${reminder.title}`} onPress={() => router.push({ pathname: '/reminder', params: { id: reminder.id } })} style={({ pressed }) => [styles.eventRow, pressed && styles.pressed]}>
                 <View style={[styles.eventIcon, { backgroundColor: visual.softColor }]}><Ionicons name={visual.icon} size={22} color={visual.color} /></View>
                 <View style={styles.eventCopy}><Text style={styles.eventTitle}>{reminder.title}</Text><Text style={styles.eventDetail}>{reminderRelativeLabel(reminder.dueOn, reminder.timeOfDay)}{linkedPerson ? ` · ${personDisplayName(linkedPerson)}` : ''}</Text></View>
                 {linkedPerson ? <Avatar initials={personInitials(linkedPerson)} imageUri={linkedPerson.photoUrl} color={AppColors.sky} size={38} /> : <Ionicons name="chevron-forward" size={19} color={AppColors.slate} />}
               </Pressable></View>;
             })}
+            <View style={styles.divider} />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Open the birthday calendar"
+              onPress={() => router.push('/birthday-calendar')}
+              style={({ pressed }) => [styles.cardLink, pressed && styles.pressed]}>
+              <Ionicons name="calendar-outline" size={18} color={AppColors.violet} />
+              <Text style={styles.cardLinkText}>
+                {monthBirthdays.length === 0
+                  ? 'Birthday calendar'
+                  : `${monthBirthdays.length} ${monthBirthdays.length === 1 ? 'birthday' : 'birthdays'} left this month`}
+              </Text>
+              <Ionicons name="chevron-forward" size={17} color={AppColors.slate} />
+            </Pressable>
           </View>
         </View>
 
@@ -425,6 +487,8 @@ const styles = StyleSheet.create({
   eventTitle: { color: AppColors.ink, fontSize: 15, fontWeight: '700', marginBottom: 3 },
   eventDetail: { color: AppColors.inkMuted, fontSize: 13 },
   divider: { height: StyleSheet.hairlineWidth, backgroundColor: AppColors.line, marginLeft: 56 },
+  cardLink: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, minHeight: 52 },
+  cardLinkText: { flex: 1, color: AppColors.violet, fontSize: 13, fontWeight: '700' },
   memoryCard: {
     flexDirection: 'row',
     minHeight: 168,

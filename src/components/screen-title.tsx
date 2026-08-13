@@ -3,13 +3,23 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppColors, FontFamily, Radius, Spacing } from '@/constants/theme';
 
+type ActionIcon =
+  | 'search-outline'
+  | 'settings-outline'
+  | 'ellipsis-horizontal'
+  | 'person-add'
+  | 'calendar-outline';
+
 type ScreenTitleProps = {
   eyebrow?: string;
   title: string;
   subtitle?: string;
-  actionIcon?: 'search-outline' | 'settings-outline' | 'ellipsis-horizontal' | 'person-add';
+  actionIcon?: ActionIcon;
   actionLabel?: string;
   onAction?: () => void;
+  secondaryActionIcon?: ActionIcon;
+  secondaryActionLabel?: string;
+  onSecondaryAction?: () => void;
 };
 
 export function ScreenTitle({
@@ -19,6 +29,9 @@ export function ScreenTitle({
   actionIcon,
   actionLabel,
   onAction,
+  secondaryActionIcon,
+  secondaryActionLabel,
+  onSecondaryAction,
 }: ScreenTitleProps) {
   return (
     <View style={styles.row}>
@@ -27,15 +40,26 @@ export function ScreenTitle({
         <Text style={styles.title}>{title}</Text>
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       </View>
-      {actionIcon ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={actionLabel}
-          onPress={onAction}
-          style={({ pressed }) => [styles.action, pressed && styles.pressed]}>
-          <Ionicons name={actionIcon} size={23} color={AppColors.ink} />
-        </Pressable>
-      ) : null}
+      <View style={styles.actions}>
+        {secondaryActionIcon ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={secondaryActionLabel}
+            onPress={onSecondaryAction}
+            style={({ pressed }) => [styles.action, pressed && styles.pressed]}>
+            <Ionicons name={secondaryActionIcon} size={23} color={AppColors.ink} />
+          </Pressable>
+        ) : null}
+        {actionIcon ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={actionLabel}
+            onPress={onAction}
+            style={({ pressed }) => [styles.action, pressed && styles.pressed]}>
+            <Ionicons name={actionIcon} size={23} color={AppColors.ink} />
+          </Pressable>
+        ) : null}
+      </View>
     </View>
   );
 }
@@ -49,6 +73,11 @@ const styles = StyleSheet.create({
   },
   copy: {
     flex: 1,
+  },
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
   },
   eyebrow: {
     color: AppColors.violet,

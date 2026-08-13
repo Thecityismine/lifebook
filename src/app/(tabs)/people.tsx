@@ -105,6 +105,9 @@ export default function PeopleScreen() {
           actionIcon="person-add"
           actionLabel="Add a person"
           onAction={() => router.push('/edit-person')}
+          secondaryActionIcon="calendar-outline"
+          secondaryActionLabel="Open the birthday calendar"
+          onSecondaryAction={() => router.push('/birthday-calendar')}
         />
 
         <View style={styles.searchBox}>

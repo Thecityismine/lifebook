@@ -23,6 +23,7 @@ const protectedDetailRoutes = new Set([
   'reminders',
   'reminder',
   'edit-reminder',
+  'birthday-calendar',
   'privacy',
   'family-access',
   'notification-settings',
@@ -147,6 +148,7 @@ function AppNavigator() {
         <Stack.Screen name="reminders" />
         <Stack.Screen name="reminder" />
         <Stack.Screen name="edit-reminder" />
+        <Stack.Screen name="birthday-calendar" />
         <Stack.Screen name="privacy" />
         <Stack.Screen name="family-access" />
         <Stack.Screen name="notification-settings" />
